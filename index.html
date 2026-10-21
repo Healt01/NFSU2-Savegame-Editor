@@ -147,7 +147,7 @@
   <div class="wrap">
     <h1>NFS Underground 2 – Save Editor (100% client‑side)</h1>
     <div class="sub">Open a save file, tweak name, money and car performance, then download the modified file. No
-      uploads; everything stays in your browser.</div>
+      uploads; everything stays in your browser. The format (PC or Xbox port / xemu) is detected from the header.</div>
 
     <div class="card">
       <div class="grid">
@@ -164,7 +164,7 @@
     </div>
 
     <div class="card" id="summary" hidden>
-      <div class="grid">
+      <div class="grid" id="summaryDisplay">
         <div>
           <div class="muted">Profile Name</div>
           <div id="profile" class="pill">—</div>
@@ -181,6 +181,10 @@
           <div class="muted">Header Check</div>
           <div id="headerStatus" class="pill">—</div>
         </div>
+        <div>
+          <div class="muted">Detected Format</div>
+          <div id="formatDisplay" class="pill">—</div>
+        </div>
       </div>
     </div>
 
@@ -189,6 +193,7 @@
         <div>
           <label for="name">New Profile Name (leave empty = no change)</label>
           <input id="name" type="text" maxlength="32" />
+          <div class="muted">PC saves: up to 15 characters. Xbox saves: up to 7, uppercase.</div>
         </div>
         <div>
           <label for="money">New Money (‑1 = no change)</label>
@@ -197,6 +202,7 @@
       </div>
       <div style="height:12px"></div>
       <div class="grid" id="cars"></div>
+      <div class="muted" id="status"></div>
       <div style="height:12px"></div>
       <div class="row">
         <button id="apply" class="primary" disabled>Apply Changes</button>
