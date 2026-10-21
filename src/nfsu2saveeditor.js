@@ -6,6 +6,7 @@
 // derived by aligning the payloads of matched PC/Xbox save pairs.
 
 const MAGIC = "20CM";
+const MONEY_MAX = 2147483647; // signed 32-bit, as the game stores it
 const SLOT_SIZE = 0x7F2;
 const NUM_SLOTS = 5;
 const SLOT_HEADER = 20;   // slot header is 20 bytes in both formats
@@ -158,6 +159,8 @@ function resetUI() {
     nameField.style.textTransform = 'none';
     setStatus('');
     perfChoice = {};
+    const xboxNote = document.getElementById('xboxNote');
+    if (xboxNote) { xboxNote.hidden = true; }
 }
 
 resetUI();
@@ -193,6 +196,8 @@ function render() {
 
     fmt = FORMATS[key];
     formatDisplay.textContent = fmt.label;
+    const xboxNote = document.getElementById('xboxNote');
+    if (xboxNote) { xboxNote.hidden = (key !== 'xbox'); }
     nameField.maxLength = fmt.nameMax;
     if (fmt.upper) { nameField.style.textTransform = 'uppercase'; }
 
@@ -259,9 +264,13 @@ applyBtn.addEventListener('click', () => {
         setText('#profile', newName);
     }
     const val = parseInt(moneyField.value.trim(), 10);
-    if (!Number.isNaN(val) && val !== -1 && val > 0) {
-        dv.setInt32(fmt.money, val, true);
-        setText('#moneyDisplay', String(val));
+    if (!Number.isNaN(val) && val !== -1) {
+        if (val > MONEY_MAX) {
+            setStatus(`Money must be 1..${MONEY_MAX} (the game stores a signed 32-bit value, larger values become negative).`);
+        } else {
+            dv.setInt32(fmt.money, val, true);
+            setText('#moneyDisplay', String(val));
+        }
     }
     for (let i = 0; i < NUM_SLOTS; i++) {
         const sel = document.getElementById(`car_${i}`);
