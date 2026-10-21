@@ -50,6 +50,10 @@ header size.
 | Slot count           | 5         | 5          |                |
 | Performance block    | slot + `0x94` | slot + `0x94` | 68 bytes  |
 
+Money is a **signed 32-bit** value: 2147483647 is the largest amount the game
+shows, and anything above it appears as a negative number in game (confirmed on
+PC). The editor rejects values outside 1..2147483647.
+
 Name rules (verified in-game values): PC names keep their case, max 15 chars,
 zero-padded to 16 bytes. Xbox names are uppercase, max 7 chars, zero-padded to 8
 bytes. The editor uppercases + truncates Xbox names before writing.
@@ -82,6 +86,45 @@ slot header is zero — the editor uses the built-in template header above.
 saves mix 0/1 per bar); "Max out" fills every bar.
 
 ## Checksums
+
+No payload checksum was found in any sample: scanning every byte position of the
+payload and header for a stored u32 equal to `sum32`, `crc32`, `adler32`,
+`xor32`, `sumu16` or `sumu32` of the payload/prefix/suffix produced no match on
+the 7 Xbox saves, and the byte/xor deltas between the two xemu saves do not
+appear anywhere in the payload. The PC format has no verification at all, which
+is why the PC editor's edits load fine.
+
+## Verification on Xbox (the important limitation)
+
+The Xbox builds (Switch port and xemu) **verify the save when loading it**.
+Editing money in a port save (500 / 10000 / 2147483647) makes the game refuse
+it with "Unable to load SAVE". PC saves accept the same edits.
+
+The header carries the pieces of that verification:
+
+- 20 bytes that are **constant per profile**: all 5 Switch-port saves share
+  `6d 93 ec 71 f2 c9 61 39 81 ea 1a 81 ca 06 39 51 05 a0 61 03`, and the two
+  xemu saves share `b6 a4 6e 67 60 c9 bb 3c 89 ff 28 9e 81 52 56 3b bf b3 72 4b`.
+  The values differ between the two profiles.
+- 40 bytes that change **per save** (the signature).
+- Copying a working port save folder into xemu makes it show up in the game's
+  list (the name comes from `SaveMeta.xbx`) but loading returns
+  "Unable to load SAVE" — consistent with a save bound to the profile that
+  created it.
+
+No standard checksum or hash (sum32, crc32, adler, xor, MD5, SHA-1/256/512,
+plain or keyed, over the payload, the header, with the 20-byte key as salt,
+self-referential zeroed variants) reproduces the 40 bytes from the payload,
+so the signature is game-specific and cannot be recomputed from the 7 Xbox
+samples available. `SaveMeta.xbx` is only UTF-16 text `Name=<name>` + CRLF,
+and `saveimage.xbx` is a 4096-byte `XPR0` thumbnail; neither contains a
+checksum, so the check is inside the game.
+
+Consequence: byte-level edits of an Xbox save are produced correctly by the
+editor (verified on the bytes), but the game can reject them at load. The
+editor shows a warning for Xbox saves. Cracking the signature needs more
+pairs of `(payload, 40-byte signature)` from the same profile.
+
 
 No checksum was found. Sums, CRC32 and the header key blob do not correlate with the
 payload, and xemu writes zeros in regions that are non-zero in the PC template. The
