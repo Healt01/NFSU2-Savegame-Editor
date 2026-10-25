@@ -404,7 +404,7 @@ function render() {
           <select id="car_${i}" ${inUse ? '' : 'disabled'}>
             <option value="2">No effect</option>
             <option value="0">Nill out</option>
-            <option value="1">Max out (every part installed — not a state the game produces)</option>
+            <option value="1">Max out flags (parts shown installed, no performance change)</option>
           </select>
           ${(!inUse && locked) ? `<button id="unlock_${i}" style="margin-top:8px">Unlock Slot</button>` : ''}
         `;

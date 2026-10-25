@@ -108,9 +108,19 @@ car** — index 4 is `1.8` on two cars, `0.45` on the Mustang, `3.0` on the maxe
 car, so it is a per-car stat, not a part constant. Buying a part subtracts its
 price from money with no overflow (the shop shows the price).
 
-Pending test: writing `3.00` into indices 1..10 of a stock slot (one flag only)
-and checking whether the garage bars rise. That decides whether the game reads the
-floats from the save or recomputes them from the installed parts at load.
+Test done: writing `3.00` into indices 1..10 of a stock slot (one flag installed)
+**did not raise performance** — in game the Mustang's Performance Stats showed
+Torque `-4.46 Nm` and Power `-2.35 kW`, and the garage bars did not move. The game
+recomputes performance from the installed parts and stores the result in these
+floats, so writing them directly produces an inconsistent state. The editor must
+not write floats; the `3.00` values in a maxed car come together with the ~40
+parts installed in that car.
+
+Practical consequence: performance is obtained in game with money, not by editing.
+With money set through the editor, buying the top part of each category is cheap,
+and the game writes a legit maxed slot itself. The flags block is only the
+installed/parts state, so `Max out` on flags is cosmetic (shows parts installed,
+including conflicting ones) and cannot make a car faster.
 
 Verified on real saves (17 slots from PC, xemu and Switch-port saves): a
 game-written maxed car has ~40 flags set, not 68, and flags 34 and 35 are never
