@@ -203,7 +203,9 @@
       <div class="muted" id="xboxNote" hidden>Heads-up: the Xbox builds (Switch port and xemu) verify the save when
         loading it, and they refuse edited files with "Unable to load SAVE". Keep the .bak backup, keep the
         <code>saveimage.xbx</code> / <code>SaveMeta.xbx</code> files next to the save, and test every edited save in
-        game before it replaces your only copy.</div>
+        game before it replaces your only copy. For money on xemu there is a route that works: patch the cash in
+        xemu's RAM with <code>tools/xemu_money.py</code> and then Save in-game — the game writes the signature
+        itself, so the save is accepted (verified with 1000000 and 2147483647).</div>
       <div style="height:12px"></div>
       <div class="grid" id="cars"></div>
       <div class="muted" id="status"></div>
