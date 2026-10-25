@@ -101,6 +101,17 @@ has zeros, and installing *Performance Exhaust* wrote `0.24` in index 4. So the
 car's performance comes from these floats, not from the flag block: filling the
 flags with 1 does not raise any performance value.
 
+Cycle 2 (replace *Performance Exhaust* with *Cat-Back Exhaust System* in the same
+slot): flag 16 -> 0, flag 20 -> 1, and the index-4 float went `0.24` -> `0.45`.
+So one flag per exclusive group, and the float is the category value for **that
+car** — index 4 is `1.8` on two cars, `0.45` on the Mustang, `3.0` on the maxed
+car, so it is a per-car stat, not a part constant. Buying a part subtracts its
+price from money with no overflow (the shop shows the price).
+
+Pending test: writing `3.00` into indices 1..10 of a stock slot (one flag only)
+and checking whether the garage bars rise. That decides whether the game reads the
+floats from the save or recomputes them from the installed parts at load.
+
 Verified on real saves (17 slots from PC, xemu and Switch-port saves): a
 game-written maxed car has ~40 flags set, not 68, and flags 34 and 35 are never
 set. Parts in the same slot are exclusive (e.g. *Performance Exhaust* and *Cat
