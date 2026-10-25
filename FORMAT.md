@@ -153,10 +153,24 @@ install (different `eeprom.bin`) can derive a different key, and a real console
 uses its own EEPROM/HDD key, so extract the key from the machine that wrote the
 save. `tools/xbox_key.py` finds and verifies it from a RAM dump.
 
-The Switch port uses a different key: both port samples share the blob
-`6d93ec71f2c9613981ea1a81ca06395105a06103`. No RAM dump of the port was
-available, so its key is **unknown/unverified**. The scheme is the same, so the
-editor can re-sign a port save once that key is obtained the same way.
+The Switch port (`nfsu2-sw`, static recomp of the Xbox game) signs with an
+**all-zero key**:
+
+```
+K = 00000000000000000000000000000000
+```
+
+That is why all 5 port samples share the blob `6d93ec71f2c9613981ea1a81ca06395105a06103`
+and all three digests verify with the zero key. The port's kernel stubs
+`xbox_EEPROMKey[16] = {0}` (`xboxrecomp/src/kernel/kernel_xbox.c`) and the DES
+key-derivation calls are stubs, so the game ends up hashing with a zero key. An
+HMAC key shorter than the 64-byte block is zero-padded, so any all-zero key of
+length 0..64 gives the same digests — the 16-byte form is what `tools/xbox_sign.py`
+and the editor's "Fill port key" button use.
+
+The port keeps its saves in `sdmc:/switch/nfsu2x/save` (`NFSU2_DEFAULT_SAVE_DIR`
+in `src/main.c`), so an edited + re-signed save can be put on the Switch SD card
+directly, no FTP needed. An in-game load test on the Switch is **pending**.
 
 ### How the key is found
 

@@ -208,7 +208,8 @@
         the profile (console or emulator), not to the save. Paste that key below and the editor re‑signs the file after
         every edit; without the key the old signature is kept and the game will most likely show "Unable to load SAVE".
         The key is not stored in the save: for xemu it can be extracted from the emulator's RAM with
-        <code>tools/xbox_key.py</code>. For a real console it comes from the EEPROM/HDD key. Without a key, cash can
+        <code>tools/xbox_key.py</code>; for the Switch port it is 16 zero bytes (the port stubs its EEPROM key to zero,
+        verified against the port's saves). For a real console it comes from the EEPROM/HDD key. Without a key, cash can
         still be changed in game through xemu's RAM with <code>tools/xemu_money.py</code>.</div>
       <div id="xboxKeyRow" hidden>
         <div style="height:12px"></div>
@@ -216,6 +217,7 @@
         <div class="row">
           <input id="xboxKey" type="text" spellcheck="false" autocomplete="off" placeholder="e.g. COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS" style="flex:1; min-width:260px" />
           <button id="keyFill" type="button" title="Key extracted from this machine's xemu — another install may derive a different key">Fill xemu key</button>
+          <button id="keyFillPort" type="button" title="Switch port key — all-zero, because the port's EEPROM key is stubbed to zero (verified on 5 port saves)">Fill port key</button>
           <button id="keyClear" type="button">Clear</button>
         </div>
         <div class="muted">Kept only in this browser (localStorage). A wrong key re‑signs the save with the wrong key, so

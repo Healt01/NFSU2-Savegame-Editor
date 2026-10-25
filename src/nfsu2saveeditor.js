@@ -147,6 +147,10 @@ function verifyXbox(u8, key) {
 // different install can derive a different one).
 const KNOWN_XEMU_KEY = 'COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS';
 
+// Switch port (nfsu2-sw) key: the port stubs its EEPROM key to zero, so its
+// saves are signed with an all-zero key. Verified on all 5 port samples.
+const KNOWN_PORT_KEY = '00000000000000000000000000000000';
+
 function readStoredKey() {
     try { return localStorage.getItem(KEY_STORAGE) || ''; } catch (e) { return ''; }
 }
@@ -289,6 +293,7 @@ const reloadBtn = $('#reload');
 const xboxKeyRow = $('#xboxKeyRow');
 const xboxKeyInput = $('#xboxKey');
 const keyFillBtn = $('#keyFill');
+const keyFillPortBtn = $('#keyFillPort');
 const keyClearBtn = $('#keyClear');
 const sigCell = $('#sigCell');
 const sigStatus = $('#sigStatus');
@@ -324,6 +329,11 @@ xboxKeyInput.addEventListener('input', () => {
 keyFillBtn.addEventListener('click', () => {
     xboxKeyInput.value = KNOWN_XEMU_KEY;
     storeKey(KNOWN_XEMU_KEY);
+    updateSigStatus();
+});
+keyFillPortBtn.addEventListener('click', () => {
+    xboxKeyInput.value = KNOWN_PORT_KEY;
+    storeKey(KNOWN_PORT_KEY);
     updateSigStatus();
 });
 keyClearBtn.addEventListener('click', () => {
