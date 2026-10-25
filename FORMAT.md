@@ -366,6 +366,8 @@ automates steps 2-3 (`find` / `scan` / `narrow` / `set`).
 | `tools/xemu_money.py` | Find and patch the cash value in a running xemu's guest RAM. |
 | `tools/hdd_save.py` | List, extract or replace a save inside an xemu qcow2 HDD image or a raw image, without booting the dashboard. |
 | `tools/perf_diff.py` | Diff the car slots of two saves: which of the 68 performance flags and which other slot bytes changed. Used to decode the exclusive part groups. |
+| `tools/perf_probe.sh` | Snapshot a save slot from the mounted card into `snapshots/snapN` and diff it against `snapN-1`. |
+| `tools/browser_capture.py` | Serve the editor page and save a browser POST, so the bytes the editor produces in the browser can be compared byte-for-byte with the Python path. |
 
 ## PC → Xbox conversion (unverified, not implemented)
 
