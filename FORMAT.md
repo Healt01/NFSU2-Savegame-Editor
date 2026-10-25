@@ -105,6 +105,13 @@ The exclusive groups cannot be derived from the samples available: a
 Decoding needs the game's part table, or saves with single-part changes made in
 the upgrade menu.
 
+Protocol for decoding on the Switch (the save is plain folders on the SD card, so
+the game's own writes can be read directly, read-only): pick one slot, snapshot
+the save, make **one** change in the upgrade menu, save in game, snapshot again,
+and diff with `tools/perf_diff.py`. Repeating across categories gives the flags
+that turn on/off for each part, which identifies the exclusive groups and where
+levels are stored.
+
 ## Checksums
 
 No checksum field exists: no stored u32 in any sample equals `sum32`, `crc32`,
@@ -281,7 +288,8 @@ automates steps 2-3 (`find` / `scan` / `narrow` / `set`).
 | `tools/xbox_key.py` | Find the 16-byte key in a RAM/core dump and verify it against a save; `--key` verifies a known key. |
 | `tools/xbox_sign.py` | Sign or verify an Xbox save offline (`sign` / `verify`). |
 | `tools/xemu_money.py` | Find and patch the cash value in a running xemu's guest RAM. |
-| `tools/hdd_save.py` | List, extract or replace a save inside an xemu qcow2 HDD image, without booting the dashboard. |
+| `tools/hdd_save.py` | List, extract or replace a save inside an xemu qcow2 HDD image or a raw image, without booting the dashboard. |
+| `tools/perf_diff.py` | Diff the car slots of two saves: which of the 68 performance flags and which other slot bytes changed. Used to decode the exclusive part groups. |
 
 ## PC → Xbox conversion (unverified, not implemented)
 
