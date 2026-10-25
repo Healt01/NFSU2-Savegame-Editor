@@ -1,14 +1,16 @@
 # NFSU2 save format — PC vs Xbox (Switch port / original Xbox)
 
-Everything below was derived by reverse-engineering 11 real saves (5 PC, 5 Switch
-Xbox-port, 1 xemu) and is verified against them. The editor reads and writes both
-formats; nothing on this page is a guess unless it is marked **unverified**.
+Everything below was derived by reverse-engineering real saves (6 PC, 5 Switch
+Xbox-port, 4 xemu) plus a fifth game-written xemu save captured from RAM. The
+editor reads and writes both formats; nothing on this page is a guess unless it
+is marked **unverified**.
 
 ## File layout
 
 Both formats are one flat binary file with a header, then a payload. There is no
-encryption. PC saves are not verified by the game; Xbox saves carry a per-save
-40-byte signature that the game checks at load (see *Verification on Xbox*).
+encryption. PC saves are not verified by the game; Xbox saves carry three
+HMAC-SHA1 fields (60 bytes) that the game checks at load (see
+*Verification on Xbox*).
 
 ```
 offset  field                       PC          Xbox (port / xemu)
@@ -16,27 +18,23 @@ offset  field                       PC          Xbox (port / xemu)
 0x04    u32  total file size        54966       53868
 0x08    u32  version                8           8
 0x0C    u32  payload size           54930       53784
-0x10    key blob                    12 bytes    60 bytes
-...     u32  constant 269 (0x10D)   0x1C        0x4C
-...     u32  payload size (repeat)  0x20        0x50
+0x10    signature blob              12 bytes    20 bytes (HMAC)
+0x24    signature A                 —           20 bytes (HMAC)
+0x38    signature B                 —           20 bytes (HMAC)
+0x4C    u32  constant 269 (0x10D)    0x1C        0x4C
+0x50    u32  payload size (repeat)   0x20        0x50
 0x24/0x54  payload starts
 ```
 
 So `header = total size - payload size` = **36 (PC)** or **84 (Xbox)**. That is the
 detection rule used by the editor: magic + version 8 + `size - payload == 36/84`.
 
-The key blob:
+The header fields:
 
-- PC: 4 constant bytes `bb c0 87 f2` + 8 per-save random bytes.
-- Xbox port: 20 constant bytes
-  `6d 93 ec 71 f2 c9 61 39 81 ea 1a 81 ca 06 39 51 05 a0 61 03`
-  + 40 per-save random bytes.
-- Original Xbox (xemu): the first 20 bytes are **constant per profile**
-  (`b6 a4 6e 67 60 c9 bb 3c 89 ff 28 9e 81 52 56 3b bf b3 72 4b` for the xemu
-  profile — identical in XEMU2 and XEMU3, two saves the game wrote), and the
-  remaining 40 bytes are the per-save signature.
-
-The editor never touches the header.
+- **PC**: 12-byte blob, 4 constant bytes `bb c0 87 f2` + 8 per-save random bytes.
+  PC saves are not verified, so the blob has no known function.
+- **Xbox**: three 20-byte HMAC-SHA1 digests (blob, signature A, signature B). They
+  are not random and not a key: see *Verification on Xbox* below.
 
 ## Field offsets
 
@@ -91,63 +89,84 @@ saves mix 0/1 per bar); "Max out" fills every bar.
 
 ## Checksums
 
-No payload checksum was found in any sample: scanning every byte position of the
-payload and header for a stored u32 equal to `sum32`, `crc32`, `adler32`,
-`xor32`, `sumu16` or `sumu32` of the payload/prefix/suffix produced no match on
-the 7 Xbox saves, and the byte/xor deltas between the two xemu saves do not
-appear anywhere in the payload. The PC format has no verification at all, which
-is why the PC editor's edits load fine.
+No checksum field exists: no stored u32 in any sample equals `sum32`, `crc32`,
+`adler32`, `xor32`, `sumu16` or `sumu32` of the payload/prefix/suffix. The PC
+format has no verification at all, which is why PC edits load fine. The Xbox
+format instead carries three HMAC-SHA1 digests in the header.
 
-## Verification on Xbox (the important limitation)
+## Verification on Xbox: HMAC-SHA1 (verified)
 
-The Xbox builds (Switch port and xemu) **verify the save when loading it**.
-Editing money in a port save (500 / 10000 / 2147483647) makes the game refuse
-it with "Unable to load SAVE". PC saves accept the same edits.
+The Xbox builds (Switch port and xemu) verify the save when loading it. The 60
+bytes at `0x10..0x4C` are three **HMAC-SHA1** digests made with a 16-byte key
+`K` that belongs to the profile (console or emulator), not to the save:
 
-The header carries the pieces of that verification:
+| File offset | Field | Formula (HMAC-SHA1, 20 bytes) |
+|-------------|-------|-------------------------------|
+| `0x10` | blob | `HMAC(K, file[0x4C..0x54])` — the 8 bytes `269, 53784` |
+| `0x24` | sigA | `HMAC(K, file[0x54..EOF])` — the whole payload |
+| `0x38` | sigB | `HMAC(K, file[0x00..0x38])` — header up to sigA |
 
-- 20 bytes that are **constant per profile**: all 5 Switch-port saves share
-  `6d 93 ec 71 f2 c9 61 39 81 ea 1a 81 ca 06 39 51 05 a0 61 03`, and the two
-  xemu saves share `b6 a4 6e 67 60 c9 bb 3c 89 ff 28 9e 81 52 56 3b bf b3 72 4b`.
-  The values differ between the two profiles.
-- 40 bytes that change **per save** (the signature).
-- Copying a working port save folder into xemu makes it show up in the game's
-  list (the name comes from `SaveMeta.xbx`) but loading returns
-  "Unable to load SAVE" — consistent with a save bound to the profile that
-  created it.
+The game writes them in that order: `blob` and `sigA` first, `sigB` last (it
+covers the other two). Verified on five saves written by the game itself
+(`XEMU`, `XEMU2` twice, money `1000000`, money `2147483647`): recomputing the
+three fields with the key below reproduces each file **byte for byte**, and
+changing one payload byte invalidates `sigA`/`sigB` until they are recomputed.
+The editor re-signs in exactly this order; its "Xbox Signature" pill shows
+`valid ✓`, `modified — will re-sign`, `re-signed (unverified key)`, `key
+mismatch` or `no key`.
 
-No standard checksum or hash (sum32, crc32, adler, xor, MD5, SHA-1/224/256/384/512,
-SHA3, blake2b/s, plain or keyed, HMAC, over the payload, the header, with the
-20-byte key as salt, self-referential zeroed variants, chunked/lane sums)
-reproduces the 40 bytes from the payload, so the signature is game-specific and
-cannot be recomputed from the Xbox samples available. `SaveMeta.xbx` is only
-UTF-16 text `Name=<name>` + CRLF, and `saveimage.xbx` is a 4096-byte `XPR0`
-thumbnail; neither contains a checksum, so the check is inside the game.
+Why this was missed at first: the 20 bytes at `0x10` look like a per-profile key
+and are constant across saves of the same profile, but they are just
+`HMAC(K, sizes)` — constant because the two size fields are constant. Using
+that blob as the HMAC key cannot reproduce anything.
 
-Signature shape (from the pair XEMU2 / XEMU3, same profile, both written by the
-game): **all 40 signature bytes change** when the payload changes (28-byte
-payload change with money 50 → 0 produced 149 changed payload bytes and a full
-avalanche in the signature). That is hash-like behaviour, not sums/CRC, and the
-key used is the 20-byte per-profile blob, so forging the signature needs the
-algorithm, not just more samples.
+### The key
 
-Consequence: byte-level edits of an Xbox save are produced correctly by the
-editor (verified on the bytes), but the game rejects them at load. The editor
-shows a warning for Xbox saves.
+For the xemu profile used by the samples here:
+
+```
+K = COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS
+```
+
+It is **not** in `default.xbe` and **not** stored raw in `eeprom.bin`. xemu
+builds a 17-entry table of 16-byte keys in guest RAM at physical address
+`0x3b018` at boot; the default key is entry 16 (`0x3b118`). A different xemu
+install (different `eeprom.bin`) can derive a different key, and a real console
+uses its own EEPROM/HDD key, so extract the key from the machine that wrote the
+save. `tools/xbox_key.py` finds and verifies it from a RAM dump.
+
+The Switch port uses a different key: both port samples share the blob
+`6d93ec71f2c9613981ea1a81ca06395105a06103`. No RAM dump of the port was
+available, so its key is **unknown/unverified**. The scheme is the same, so the
+editor can re-sign a port save once that key is obtained the same way.
+
+### How the key is found
+
+For each 16-byte candidate `c` in a RAM dump, check
+`HMAC-SHA1(c, save[0x4C..0x54]) == save[0x10..0x24]`. The blob therefore
+identifies the key/profile. `tools/xbox_key.py` scans a dump this way; for the
+samples here the match was the kernel default key at physical `0x3b118`.
 
 ### Slot folders the game accepts
 
 The game stores each slot in `E:\UDATA\<title id>\<prefix + slot id>`: the first
 slot was `004D149D1019`, the next `004D149D101A` (prefix `004D149D`, slot ids
-`1019..101D`), and a folder the game created loads a **byte-identical** copy of
-its own save (verified by md5 after upload). Folders with invented names show up
-in the game's list (the name comes from `SaveMeta.xbx`, name ≤ 7 chars) but
-loading them fails, and deleting them from in-game fails too. Max 5 slots.
+`1019..101D`). A folder the game created loads a **byte-identical** copy of its
+own save (verified by md5 after upload). Max 5 slots. `SaveMeta.xbx` is only
+UTF-16 text `Name=<name>` + CRLF and `saveimage.xbx` is a 4096-byte `XPR0`
+thumbnail; neither contains a checksum. A save folder from another profile shows
+up in the list but fails to load until it is re-signed with the target profile's
+key.
 
-### Money on original Xbox (xemu): the procedure that works
+### Money on original Xbox (xemu): two routes
 
-Because only the game writes the signature, the accepted way to change money is
-to make the game save the value:
+With the key, the editor is enough: open the save, set money, Apply (the editor
+re-signs), then copy the file back into its slot folder (`E:\UDATA\004D149D\…`)
+with xemu off. The signature is verified byte-for-byte against game-written
+saves; an in-game load test of an editor-signed save is still pending, so keep
+the `.bak` until it loads.
+
+If the key is unknown, make the game write the value:
 
 1. Run NFSU2 in xemu and load the save.
 2. Find the cash variable in xemu's guest RAM: the 64 MB RAM block is a `rw-p`
@@ -165,8 +184,15 @@ to make the game save the value:
 
 Verified results: game-written saves with money `1000000` and `2147483647`
 (both shown in game as such, both load normally). `tools/xemu_money.py`
-automates steps 2-3 (`find` / `scan` / `narrow` / `set`); the xemu FTP client
-used for step 4 is the active-mode client described in `tools/`.
+automates steps 2-3 (`find` / `scan` / `narrow` / `set`).
+
+## Tools
+
+| Tool | Purpose |
+|------|---------|
+| `tools/xbox_key.py` | Find the 16-byte key in a RAM/core dump and verify it against a save; `--key` verifies a known key. |
+| `tools/xbox_sign.py` | Sign or verify an Xbox save offline (`sign` / `verify`). |
+| `tools/xemu_money.py` | Find and patch the cash value in a running xemu's guest RAM. |
 
 ## PC → Xbox conversion (unverified, not implemented)
 

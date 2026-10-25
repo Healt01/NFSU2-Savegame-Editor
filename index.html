@@ -185,6 +185,10 @@
           <div class="muted">Detected Format</div>
           <div id="formatDisplay" class="pill">—</div>
         </div>
+        <div id="sigCell" hidden>
+          <div class="muted">Xbox Signature</div>
+          <div id="sigStatus" class="pill">—</div>
+        </div>
       </div>
     </div>
 
@@ -200,12 +204,23 @@
           <input id="money" type="number" step="1" />
         </div>
       </div>
-      <div class="muted" id="xboxNote" hidden>Heads-up: the Xbox builds (Switch port and xemu) verify the save when
-        loading it, and they refuse edited files with "Unable to load SAVE". Keep the .bak backup, keep the
-        <code>saveimage.xbx</code> / <code>SaveMeta.xbx</code> files next to the save, and test every edited save in
-        game before it replaces your only copy. For money on xemu there is a route that works: patch the cash in
-        xemu's RAM with <code>tools/xemu_money.py</code> and then Save in-game — the game writes the signature
-        itself, so the save is accepted (verified with 1000000 and 2147483647).</div>
+      <div class="muted" id="xboxNote" hidden>Xbox saves are signed with HMAC‑SHA1 using a 16‑byte key that belongs to
+        the profile (console or emulator), not to the save. Paste that key below and the editor re‑signs the file after
+        every edit; without the key the old signature is kept and the game will most likely show "Unable to load SAVE".
+        The key is not stored in the save: for xemu it can be extracted from the emulator's RAM with
+        <code>tools/xbox_key.py</code>. For a real console it comes from the EEPROM/HDD key. Without a key, cash can
+        still be changed in game through xemu's RAM with <code>tools/xemu_money.py</code>.</div>
+      <div id="xboxKeyRow" hidden>
+        <div style="height:12px"></div>
+        <label for="xboxKey">Xbox signing key (32 hex characters = 16 bytes)</label>
+        <div class="row">
+          <input id="xboxKey" type="text" spellcheck="false" autocomplete="off" placeholder="e.g. COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS" style="flex:1; min-width:260px" />
+          <button id="keyFill" type="button" title="Key extracted from this machine's xemu — another install may derive a different key">Fill xemu key</button>
+          <button id="keyClear" type="button">Clear</button>
+        </div>
+        <div class="muted">Kept only in this browser (localStorage). A wrong key re‑signs the save with the wrong key, so
+          check the "Xbox Signature" indicator before downloading.</div>
+      </div>
       <div style="height:12px"></div>
       <div class="grid" id="cars"></div>
       <div class="muted" id="status"></div>

@@ -42,3 +42,7 @@
 
 # xemu money patch session state (pid + candidate addresses)
 tools/xemu_money_state.json
+
+# Python bytecode
+__pycache__/
+*.pyc
