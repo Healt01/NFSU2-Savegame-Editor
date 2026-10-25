@@ -234,6 +234,10 @@ directory entry and cluster chain stay as the game left them:
 |---------|-------|-----------|----------------|
 | A | 100000 | left untouched (`sigA` fails) | **"Unable to load HEALT."** |
 | B | 100000 | recomputed with the all-zero key | loads, garage shows **100,000** |
+| C | 2147483647 | recomputed | loads, shows **2,147,483,647**; the running value goes **negative after a race** |
+| D | 928310 | recomputed | `Max out` on flags only (all 68): loads, every part shown Installed including conflicting ones, bars unchanged |
+| E | 928310 | recomputed | maxed pattern (40 flags + `3.00` values) on the stock Supra slot: bars match the hand-maxed Supra |
+| F | 928310 | recomputed, bytes from the **browser editor** | maxed pattern on the 240SX slot: car at max |
 
 Variant A changes 4 bytes; variant B adds the `sigA` and `sigB` digests
 (40 bytes total, `0x24..0x4B`). The `blob` field does not change in either
