@@ -54,7 +54,8 @@ header size.
 
 Money is a **signed 32-bit** value: 2147483647 is the largest amount the game
 shows, and anything above it appears as a negative number in game (confirmed on
-PC). The editor rejects values outside 1..2147483647.
+PC). `2147483647` is read and shown as such on the Switch port as well (in-game
+test, 2026-10-25). The editor rejects values outside 1..2147483647.
 
 Name rules (verified in-game values): PC names keep their case, max 15 chars,
 zero-padded to 16 bytes. Xbox names are uppercase, max 7 chars, zero-padded to 8
