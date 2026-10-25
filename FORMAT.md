@@ -55,7 +55,9 @@ header size.
 Money is a **signed 32-bit** value: 2147483647 is the largest amount the game
 shows, and anything above it appears as a negative number in game (confirmed on
 PC). `2147483647` is read and shown as such on the Switch port as well (in-game
-test, 2026-10-25). The editor rejects values outside 1..2147483647.
+test, 2026-10-25), but it **goes negative after a race** — the winnings are added
+to the running `int32` and overflow. Use a moderate value for playing. The editor
+rejects values outside 1..2147483647.
 
 Name rules (verified in-game values): PC names keep their case, max 15 chars,
 zero-padded to 16 bytes. Xbox names are uppercase, max 7 chars, zero-padded to 8
@@ -96,9 +98,18 @@ a state the game produces**.
 In-game on the Switch port (2026-10-25), a maxed-out block is accepted: the save
 loads, the garage shows every part as *Installed*, and conflicting parts are
 shown installed together, which the upgrade menu refuses to produce legitimately.
-Race behaviour with a maxed-out block is **not tested**. The garage bars
+The car won its race and behaved well; nitrous felt off. The game's own autosave
+kept all 68 flags set and re-signed the save with the zero key, so the
+conflicting state persists across autosaves. Race behaviour with a maxed-out
+block is **not fully tested** (nitrous). The garage bars
 (Acceleration / Top Speed / Handling) and Visual Rating come from other slot
 fields, not from these flags.
+
+Money at `2147483647` displays fine, but **becomes negative after a race**: the
+winnings are added to the stored `int32` and overflow. The save written by the
+game still held `2147483647`, so the overflow is in the running value, not in
+the file. A large value is therefore risky in game; `100000` is the practical
+ceiling to use.
 
 The exclusive groups cannot be derived from the samples available: a
 "never co-occurs" clustering over 17 slots produced one component of 54 flags.
@@ -222,6 +233,18 @@ files — the game does not read saves from them. An edited + re-signed save can
 therefore be copied onto the SD card with ordinary file tools, no FTP, no image.
 Access the card from Linux with Hekate's USB Mass Storage (the card shows up as a
 block device; mount it read-only first, and unmount before rebooting the Switch).
+
+The port **autosaves** (a race is enough; no manual save is needed), and the
+write it produces re-signs with the zero key and stays valid. Comparing the game's
+write against the editor-signed file it came from: `sigA` and `sigB` change (the
+game re-signs), the slot array is unchanged, and 15 payload bytes outside the slot
+array change — 1 byte at payload `0xad5b` (165 -> 163) and 14 bytes zeroed in
+payload `0xc2ab..0xc3aa`. That region is game progress data, not car slots.
+
+`udisksctl power-off -b /dev/sde` is the eject equivalent here: it syncs the SCSI
+cache and the USB link drops, and Hekate ends the UMS session (`eject` needs root
+on this machine). `udisksctl eject` does not exist. Unmounting is still the step
+that flushes the FAT, so unmount before power-off.
 
 ### How the key is found
 
