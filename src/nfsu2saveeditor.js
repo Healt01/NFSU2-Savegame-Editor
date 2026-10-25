@@ -13,6 +13,19 @@ const SLOT_HEADER = 20;   // slot header is 20 bytes in both formats
 const PERF_OFFSET_IN_SLOT = 0x94;
 const PERF_COUNT = 0x44;
 
+// The 68 bytes at slot + 0x94 are one flag per upgrade part (0 = not installed,
+// 1 = installed), and the game recomputes the car's performance from the
+// installed parts. The result is kept as 10 float32 at slot + 0x40 (indices
+// 1..10, index 0 is unused garbage). Captured in game by buying every part the
+// game allows on a stock slot: 40 flags set and the values at 3.00.
+const PERF_VALUES_OFF_IN_SLOT = 0x40;
+const PERF_VALUE_COUNT = 10;   // indices 1..10, index 0 left alone
+const PERF_VALUE_MAX = 3.0;
+const PERF_TEMPLATE = [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0,
+    1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+    0, 1];
+
 // Header layout: magic(4), u32 total size, u32 version(8), u32 payload size,
 // key blob (12 bytes on PC / 60 bytes on Xbox), u32 269, u32 payload size.
 // The payload therefore starts at 0x24 (PC) or 0x54 (Xbox).
@@ -246,10 +259,20 @@ function calcUsedSlots(u8) {
 
 function setPerfForCar(u8, index, val) {
     if (index < 0 || index >= NUM_SLOTS) return;
-    const base = fmt.slots + index * SLOT_SIZE + PERF_OFFSET_IN_SLOT;
+    const slotBase = fmt.slots + index * SLOT_SIZE;
+    const perfBase = slotBase + PERF_OFFSET_IN_SLOT;
     for (let i = 0; i < PERF_COUNT; i++) {
-        const p = base + i;
-        if (p < u8.length) u8[p] = val;
+        const p = perfBase + i;
+        if (p < u8.length) u8[p] = val === 1 ? PERF_TEMPLATE[i] : 0;
+    }
+    // The performance values are what the game computes from the installed
+    // parts, so writing them has to follow the flags: 3.0 with the maxed
+    // pattern, 0 with the cleared one. Index 0 is not a value, leave it.
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    const v = val === 1 ? PERF_VALUE_MAX : 0;
+    for (let k = 1; k <= PERF_VALUE_COUNT; k++) {
+        const p = slotBase + PERF_VALUES_OFF_IN_SLOT + k * 4;
+        if (p + 4 <= u8.length) dv.setFloat32(p, v, true);
     }
 }
 
@@ -403,8 +426,8 @@ function render() {
           <label class="muted" for="car_${i}">Change performance</label>
           <select id="car_${i}" ${inUse ? '' : 'disabled'}>
             <option value="2">No effect</option>
-            <option value="0">Nill out</option>
-            <option value="1">Max out flags (parts shown installed, no performance change)</option>
+            <option value="0">Nill out (no parts, values cleared)</option>
+            <option value="1">Max out (the game's maxed pattern: 40 parts, values 3.0)</option>
           </select>
           ${(!inUse && locked) ? `<button id="unlock_${i}" style="margin-top:8px">Unlock Slot</button>` : ''}
         `;

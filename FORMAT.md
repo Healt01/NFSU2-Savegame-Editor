@@ -119,11 +119,10 @@ result, and writing them does not change what the game shows. The editor must
 not write floats; the `3.00` values in a maxed car come together with the ~40
 parts installed in that car.
 
-Practical consequence: performance is obtained in game with money, not by editing.
 With money set through the editor, buying the top part of each category is cheap,
-and the game writes a legit maxed slot itself. The flags block is only the
-installed/parts state, so `Max out` on flags is cosmetic (shows parts installed,
-including conflicting ones) and cannot make a car faster.
+and the game writes a legit maxed slot itself. The flags block is the installed
+parts state; filling all 68 flags is cosmetic (parts shown installed, including
+conflicting ones) and does not change the performance values.
 
 **Legit maxed pattern** (captured by buying every part the game allows on the
 stock Mustang slot, cycle 4): **40 flags** at positions
@@ -133,6 +132,15 @@ already maxed (Toyota Corolla, slot 1) has the **same** 39 positions, differing 
 one flag (`14` on the Corolla, `15` on the Mustang). So flag positions are shared
 across cars, and a maxed car is 40 flags + floats at `3.00`. Money spent on the
 Mustang was ~71690 (`money` in the save went 1000000 -> 928310).
+
+Applying that pattern to a stock slot in game (cycle 5, slot 5 = Toyota Supra,
+which the player had maxed by hand in a different save) gave the same garage bars
+as the hand-maxed car — Acceleration near full, Top Speed and Handling around
+70%, shop showing the top package of each category as Installed. The editor now
+writes this pattern for `Max out` (40 flags + `3.00` in indices 1..10, index 0
+left alone) and clears both for `Nill out`. Verified byte-for-byte against the
+Python path that produced the in-game accepted file (`sha1
+7c89e73fc7c94c2c7b53afccc8174a1ce51c57c3`).
 
 Verified on real saves (17 slots from PC, xemu and Switch-port saves): a
 game-written maxed car has ~40 flags set, not 68, and flags 34 and 35 are never
