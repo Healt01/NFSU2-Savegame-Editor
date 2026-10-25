@@ -115,6 +115,24 @@ The editor re-signs in exactly this order; its "Xbox Signature" pill shows
 `valid ✓`, `modified — will re-sign`, `re-signed (unverified key)`, `key
 mismatch` or `no key`.
 
+### End-to-end test in game (xemu)
+
+The signature was also verified the hard way, by loading editor-signed saves in
+NFSU2 running in xemu 0.8.137 (retail BIOS, USA XISO, 8 GiB qcow2 HDD). The
+game's only save, profile `XEMU` (money 0), was patched inside the HDD image at
+guest offset `0xac043000` with `tools/hdd_save.py`:
+
+| Variant | Money | Signature | Result in game |
+|---------|-------|-----------|----------------|
+| A | 77777 | left untouched | **"Unable to load XEMU."** |
+| B | 77777 | recomputed with the key | **"XEMU has been loaded successfully."** |
+
+Variant B went on to the main menu with the profile and its car, and the game's
+cash variable in guest RAM was `77777` (at guest offset `0x4b6364` of the 64 MB
+RAM block; see the caveat about that address under *Money on original Xbox*
+below). So the three HMAC fields are exactly what the game checks, and a
+re-signed save is accepted with the edited payload.
+
 Why this was missed at first: the 20 bytes at `0x10` look like a per-profile key
 and are constant across saves of the same profile, but they are just
 `HMAC(K, sizes)` — constant because the two size fields are constant. Using
@@ -160,11 +178,24 @@ key.
 
 ### Money on original Xbox (xemu): two routes
 
-With the key, the editor is enough: open the save, set money, Apply (the editor
-re-signs), then copy the file back into its slot folder (`E:\UDATA\004D149D\…`)
-with xemu off. The signature is verified byte-for-byte against game-written
-saves; an in-game load test of an editor-signed save is still pending, so keep
-the `.bak` until it loads.
+**With the key, the editor is enough** — verified in game: open the save, set
+money, Apply (the editor re-signs), then put the file back into its slot folder
+(`E:\UDATA\004D149D\…`) with xemu off. The dashboard's FTP server only runs
+while the dashboard is up, and this setup boots the game (with no disc the BIOS
+stops at "Please insert an Xbox disc...", not the dashboard), so
+`tools/hdd_save.py` does it offline instead, directly on the qcow2 image:
+`list` shows the saves and their guest offset, `replace` overwrites one in place
+(same byte length, so the FATX entry and cluster chain are untouched):
+
+```
+python3 tools/hdd_save.py list ~/Xbox/hdd/xbox_hdd.qcow2 --key <key>
+python3 tools/hdd_save.py replace ~/Xbox/hdd/xbox_hdd.qcow2 edited.bin \
+        --offset 0xac043000 --yes
+```
+
+Stop xemu first and keep a copy of the image. On this HDD the only save is at
+guest offset `0xac043000`; that offset is specific to an image, so always use
+`list`.
 
 If the key is unknown, make the game write the value:
 
@@ -173,14 +204,13 @@ If the key is unknown, make the game write the value:
    mapping of exactly `0x4000000` bytes in the xemu process, and the cash is a
    plain `u32` in it. Scan for the cash value shown in game, buy a part (or
    collect an SMS reward) to change it, filter by the new value — one address
-   remains. Verified example: cash 50 → 75 narrowed 1028 candidates to 1, at
-   guest offset `0x4b5364` of the RAM block (stable across restarts, only the
-   host base moves).
+   remains. The address can move between sessions/saves (it was guest
+   `0x4b5364` in one run and `0x4b6364` in another), so find it by scanning
+   rather than hardcoding it; only the host base moves with ASLR.
 3. Write the new cash (1..2147483647) to that address, confirm the game shows
    it, then **Save Game** in-game. The game writes the payload with the new
    money and a valid signature.
-4. Boot the xemu dashboard (FTP server, one connection at a time, active mode)
-   and read the save back.
+4. Read the save back (dashboard FTP, or `tools/hdd_save.py dump`).
 
 Verified results: game-written saves with money `1000000` and `2147483647`
 (both shown in game as such, both load normally). `tools/xemu_money.py`
@@ -193,6 +223,7 @@ automates steps 2-3 (`find` / `scan` / `narrow` / `set`).
 | `tools/xbox_key.py` | Find the 16-byte key in a RAM/core dump and verify it against a save; `--key` verifies a known key. |
 | `tools/xbox_sign.py` | Sign or verify an Xbox save offline (`sign` / `verify`). |
 | `tools/xemu_money.py` | Find and patch the cash value in a running xemu's guest RAM. |
+| `tools/hdd_save.py` | List, extract or replace a save inside an xemu qcow2 HDD image, without booting the dashboard. |
 
 ## PC → Xbox conversion (unverified, not implemented)
 
