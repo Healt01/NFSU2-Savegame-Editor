@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
-"""Find, extract or replace NFSU2 saves inside an xemu qcow2 hard-disk image.
+"""Find, extract or replace NFSU2 saves inside a disk image.
 
 The usual way to move saves in and out of xemu is the dashboard's FTP server,
 but that only runs while the dashboard is up. This tool works offline, directly
-on the qcow2 image, and is what was used to prove in game that the editor's
-re-signed saves are accepted (see FORMAT.md).
+on the image, and is what was used to prove in game that the editor's re-signed
+saves are accepted (see FORMAT.md). Two image kinds are supported:
+
+- a qcow2 image (xemu's `xbox_hdd.qcow2`), where a guest offset is remapped to
+  the file's clusters,
+- a raw image, mapped 1:1 — for example the Switch port's FATX partition image
+  (`sdmc:/switch/nfsu2x/save/Partition0.img`, `E:\\` in `kernel_path.c`).
 
 `replace` only overwrites the clusters a save already occupies, so the FATX
 directory entry, file name and cluster chain stay untouched. The new file must
 therefore have the same byte length as the old one (NFSU2 saves always do:
 53868 bytes on Xbox, 54966 on PC).
 
-Stop xemu before using this (the image must not be open), and keep a copy of the
-image the first time.
+Stop xemu/the port before using this (the image must not be open), and keep a
+copy of the image the first time.
 
 Examples:
     hdd_save.py list ~/Xbox/hdd/xbox_hdd.qcow2
     hdd_save.py dump ~/Xbox/hdd/xbox_hdd.qcow2 XEMU.bin --offset 0xac043000
     hdd_save.py replace ~/Xbox/hdd/xbox_hdd.qcow2 edited.bin --offset 0xac043000 --yes
+    hdd_save.py list ~/sd/switch/nfsu2x/save/Partition0.img --key 00000000000000000000000000000000
 """
 
 import argparse
@@ -35,15 +41,26 @@ GUEST_RAM_KEY = None  # per-profile; pass --key to verify signatures
 BLOB_OFF, SIGA_OFF, SIGB_OFF, SIZES_OFF, PAYLOAD_OFF = 0x10, 0x24, 0x38, 0x4C, 0x54
 
 
-class Qcow2:
-    """Minimal qcow2 reader that also exposes cluster -> host-file mapping."""
+class DiskImage:
+    """Read/cluster-map a disk image: qcow2, or a raw image mapped 1:1.
+
+    A raw image (for example the Switch port's `Partition0.img`, a FATX
+    partition) is treated as a flat file: guest offset == file offset.
+    """
 
     def __init__(self, path):
         self.path = path
         self.f = open(path, "rb")
         hdr = self.f.read(0x80)
-        if len(hdr) < 0x80 or struct.unpack(">I", hdr[:4])[0] != 0x514649FB:
-            raise SystemExit(f"error: {path} is not a qcow2 image")
+        self.cluster_size = 65536
+        self.raw = not (len(hdr) >= 0x80 and struct.unpack(">I", hdr[:4])[0] == 0x514649FB)
+        if self.raw:
+            self.vsize = os.path.getsize(path)
+            # Include the partial tail cluster, so a file smaller than one
+            # cluster is still scanned.
+            self.map = {i: i * self.cluster_size
+                        for i in range((self.vsize + self.cluster_size - 1) // self.cluster_size)}
+            return
         self.version = struct.unpack(">I", hdr[4:8])[0]
         self.cluster_bits = struct.unpack(">I", hdr[0x14:0x18])[0]
         self.cluster_size = 1 << self.cluster_bits
@@ -102,6 +119,11 @@ class Qcow2:
                     raise SystemExit(
                         f"error: guest cluster {ci:#x} is not allocated; refusing to write"
                     )
+                if host + within + take > self.vsize:
+                    raise SystemExit(
+                        f"error: writing past the end of the image "
+                        f"({host + within + take:#x} > {self.vsize:#x})"
+                    )
                 f.seek(host + within)
                 f.write(src[pos - guest_off:pos - guest_off + take])
                 touched += 1
@@ -135,7 +157,7 @@ def verify_xbox(data, key):
 
 
 def scan(image, key):
-    q = Qcow2(image)
+    q = DiskImage(image)
     saves = []
     for ci in sorted(q.map):
         guest = ci * q.cluster_size
@@ -244,7 +266,7 @@ def main(argv=None):
             "refusing to write without --yes. Stop xemu and back up the image first."
         )
     touched = q.write(off, new)
-    back = Qcow2(args.image).read(off, len(new))
+    back = DiskImage(args.image).read(off, len(new))
     if back != new:
         raise SystemExit("error: read-back differs; restore the image from your backup")
     sig = verify_xbox(back, key) if key and hdr == XBOX_HEADER else None
