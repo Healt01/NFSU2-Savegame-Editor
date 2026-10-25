@@ -133,6 +133,24 @@ RAM block; see the caveat about that address under *Money on original Xbox*
 below). So the three HMAC fields are exactly what the game checks, and a
 re-signed save is accepted with the edited payload.
 
+### End-to-end test in game (Switch port)
+
+Same pair of controls on real hardware, with the `nfsu2-sw` port on a modded
+Switch (CNX). The card was exposed to Linux through Hekate's USB Mass Storage,
+and the save `HEALT` in slot `004110E4103B` (money `36127`) was patched **in
+place** — same byte length, only the fields that had to change, so the FAT
+directory entry and cluster chain stay as the game left them:
+
+| Variant | Money | Signature | Result in game |
+|---------|-------|-----------|----------------|
+| A | 100000 | left untouched (`sigA` fails) | **"Unable to load HEALT."** |
+| B | 100000 | recomputed with the all-zero key | loads, garage shows **100,000** |
+
+Variant A changes 4 bytes; variant B adds the `sigA` and `sigB` digests
+(40 bytes total, `0x24..0x4B`). The `blob` field does not change in either
+variant, because the two size fields are untouched. The port checks the same
+three HMAC fields as xemu, and the all-zero key is accepted by the game.
+
 Why this was missed at first: the 20 bytes at `0x10` look like a per-profile key
 and are constant across saves of the same profile, but they are just
 `HMAC(K, sizes)` — constant because the two size fields are constant. Using
@@ -168,9 +186,17 @@ HMAC key shorter than the 64-byte block is zero-padded, so any all-zero key of
 length 0..64 gives the same digests — the 16-byte form is what `tools/xbox_sign.py`
 and the editor's "Fill port key" button use.
 
-The port keeps its saves in `sdmc:/switch/nfsu2x/save` (`NFSU2_DEFAULT_SAVE_DIR`
-in `src/main.c`), so an edited + re-signed save can be put on the Switch SD card
-directly, no FTP needed. An in-game load test on the Switch is **pending**.
+The port keeps its saves as **plain folders**, not inside a partition image:
+`\Device\Harddisk0\Partition1\` (`E:\`, where `UDATA` lives) is mapped to the
+**game** directory (`xboxrecomp/src/kernel/kernel_path.c`), so a save slot is
+`sdmc:/switch/nfsu2x/game/UDATA/<titleid>/<prefix+slot>/<profile name>`, next to
+`saveimage.xbx` and `SaveMeta.xbx`. On this card, verified:
+`switch/nfsu2x/game/UDATA/4541005a/004110E4103B/HEALT`. `sdmc:/switch/nfsu2x/save/`
+holds `TitleData/`, `UserData/`, `Cache/` and the (tiny, empty) `Partition*.img`
+files — the game does not read saves from them. An edited + re-signed save can
+therefore be copied onto the SD card with ordinary file tools, no FTP, no image.
+Access the card from Linux with Hekate's USB Mass Storage (the card shows up as a
+block device; mount it read-only first, and unmount before rebooting the Switch).
 
 ### How the key is found
 
