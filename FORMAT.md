@@ -84,10 +84,22 @@ slot header is zero — the editor uses the built-in template header above.
 
 `Car Slots Used` = number of slots with a non-zero header.
 
-## Performance block
+## Performance: flags and float values
 
-68 bytes at `slot base + 0x94`, one byte per upgrade part, `0` = not installed,
-`1` = installed. "Nill out" writes 0, "Max out" writes 1.
+Two fields per slot, found by installing one part in game and diffing the save
+(`tools/perf_diff.py` / `tools/perf_probe.sh`):
+
+**Flags** — 68 bytes at `slot base + 0x94`, one byte per upgrade part,
+`0` = not installed, `1` = installed. "Nill out" writes 0, "Max out" writes 1.
+Installing *Performance Exhaust* in the Mustang slot set flag 16 and nothing else
+in the flag block.
+
+**Values** — 16 `float32` at `slot base + 0x40`. Index 0 is uninitialized garbage
+in a stock slot. Indices 1..10 are the per-category performance values, indices
+11..15 are zero. A game-written maxed car has `3.00` in indices 1..10, a stock car
+has zeros, and installing *Performance Exhaust* wrote `0.24` in index 4. So the
+car's performance comes from these floats, not from the flag block: filling the
+flags with 1 does not raise any performance value.
 
 Verified on real saves (17 slots from PC, xemu and Switch-port saves): a
 game-written maxed car has ~40 flags set, not 68, and flags 34 and 35 are never
