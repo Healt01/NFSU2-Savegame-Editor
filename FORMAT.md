@@ -109,10 +109,13 @@ car, so it is a per-car stat, not a part constant. Buying a part subtracts its
 price from money with no overflow (the shop shows the price).
 
 Test done: writing `3.00` into indices 1..10 of a stock slot (one flag installed)
-**did not raise performance** — in game the Mustang's Performance Stats showed
-Torque `-4.46 Nm` and Power `-2.35 kW`, and the garage bars did not move. The game
-recomputes performance from the installed parts and stores the result in these
-floats, so writing them directly produces an inconsistent state. The editor must
+**did not raise performance** — the garage bars stayed where they were. The shop
+computes a preview of Torque/Power from the installed parts, and with the
+maxed-out flags in the other slot that preview shows negative values
+(Torque `-4.46 Nm`, Power `-2.35 kW`), which is the game's own arithmetic on a
+conflicting part set, not a consequence of editing the floats. So performance is
+computed from the installed parts; the floats at `slot + 0x40` are the stored
+result, and writing them does not change what the game shows. The editor must
 not write floats; the `3.00` values in a maxed car come together with the ~40
 parts installed in that car.
 
