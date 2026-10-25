@@ -125,6 +125,15 @@ and the game writes a legit maxed slot itself. The flags block is only the
 installed/parts state, so `Max out` on flags is cosmetic (shows parts installed,
 including conflicting ones) and cannot make a car faster.
 
+**Legit maxed pattern** (captured by buying every part the game allows on the
+stock Mustang slot, cycle 4): **40 flags** at positions
+`1,2,3,4,5,6,7,8,11,12,15,17,20,21,22,23,24,25,26,29,31,36,37,38,40,43,44,45,46,48,49,50,51,52,53,56,59,62,65,68`
+and `3.00` in float indices 1..10 (`2.98` in one index). The car the player had
+already maxed (Toyota Corolla, slot 1) has the **same** 39 positions, differing by
+one flag (`14` on the Corolla, `15` on the Mustang). So flag positions are shared
+across cars, and a maxed car is 40 flags + floats at `3.00`. Money spent on the
+Mustang was ~71690 (`money` in the save went 1000000 -> 928310).
+
 Verified on real saves (17 slots from PC, xemu and Switch-port saves): a
 game-written maxed car has ~40 flags set, not 68, and flags 34 and 35 are never
 set. Parts in the same slot are exclusive (e.g. *Performance Exhaust* and *Cat
