@@ -84,9 +84,26 @@ slot header is zero — the editor uses the built-in template header above.
 
 ## Performance block
 
-68 bytes at `slot base + 0x94`, one byte per stat, `0` = empty, `1` = filled.
-"Nill out" writes 0, "Max out" writes 1. Real maxed blocks are not 68 ones (real
-saves mix 0/1 per bar); "Max out" fills every bar.
+68 bytes at `slot base + 0x94`, one byte per upgrade part, `0` = not installed,
+`1` = installed. "Nill out" writes 0, "Max out" writes 1.
+
+Verified on real saves (17 slots from PC, xemu and Switch-port saves): a
+game-written maxed car has ~40 flags set, not 68, and flags 34 and 35 are never
+set. Parts in the same slot are exclusive (e.g. *Performance Exhaust* and *Cat
+Back Exhaust System* cannot both be installed), so filling all 68 flags is **not
+a state the game produces**.
+
+In-game on the Switch port (2026-10-25), a maxed-out block is accepted: the save
+loads, the garage shows every part as *Installed*, and conflicting parts are
+shown installed together, which the upgrade menu refuses to produce legitimately.
+Race behaviour with a maxed-out block is **not tested**. The garage bars
+(Acceleration / Top Speed / Handling) and Visual Rating come from other slot
+fields, not from these flags.
+
+The exclusive groups cannot be derived from the samples available: a
+"never co-occurs" clustering over 17 slots produced one component of 54 flags.
+Decoding needs the game's part table, or saves with single-part changes made in
+the upgrade menu.
 
 ## Checksums
 
