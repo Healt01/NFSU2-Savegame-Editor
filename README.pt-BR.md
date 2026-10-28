@@ -19,7 +19,17 @@ campos de desempenho de carro.
 ## Como usar
 
 Abra o [`index.html`](index.html) no navegador (o GitHub Pages serve ele a partir da
-branch `main`), escolha o arquivo de save, edite, **Apply**, baixe.
+branch `main`), escolha o arquivo de save, edite, **Apply**, baixe. Há no topo da página a
+troca de idioma, **English / Português (Brasil)**, guardada no seu navegador.
+
+O editor também diz qual Xbox ele está enxergando. Ele confere a assinatura com a chave
+toda zero do port do Switch: quando os três campos HMAC batem, essa chave é aplicada
+sozinha e o campo de chave some — save do port não precisa de chave sua. Quando não
+batem, o save foi assinado com chave própria (xemu ou console) e a página pede essa chave.
+
+Nada é gravado no disco ao carregar o arquivo. A página guarda os bytes originais em
+memória, e o botão **Baixar backup (.bak)** os escreve como `<seuarquivo>.bak` na pasta de
+downloads do navegador.
 
 | Campo | PC | Xbox / port do Switch |
 |-------|----|------------------------|
@@ -56,7 +66,9 @@ nada universal para publicar. Tire a sua com `tools/xbox_key.py`, que a encontra
 dump de RAM do convidado e a verifica contra um save, e cole no campo de chave do
 editor. O port do Switch é a exceção: o kernel dele zera a chave do EEPROM
 (`xboxrecomp/src/kernel/kernel_xbox.c`), então os saves dele são assinados com chave
-toda zero, que é o que o botão **Fill port key** escreve para você.
+toda zero, que é o que o botão **Chave do port (zeros)** escreve para você. O editor
+aplica essa chave sozinho quando a assinatura do save carregado bate com ela, e então
+esconde o campo de chave.
 
 ## Desempenho do carro
 
@@ -92,6 +104,11 @@ Detalhes, offsets, o layout do port no cartão SD e os testes no jogo estão em
 | PC | Save editado abre, porque o save do PC não tem assinatura. **Não retestado no trabalho desta fork** — essa linha é o registro anterior do projeto, mantido por completude. |
 | xemu | Save editado sem reassinar → `Unable to load`; reassinado → abre, e o banco novo aparece. |
 | Port do Switch | Sem reassinar → `Unable to load`; reassinado com a chave zero → abre. Dinheiro `100000` e `2147483647` aparecem certo; o padrão maxed deixa o carro no máximo. |
+
+**Escopo destes testes.** Os resultados do port do Switch vêm de um Switch modificado
+rodando o port — hardware real de console, com o cartão escrito pelo USB Mass Storage do
+Hekate. Os resultados do xemu vêm do emulador. Nada foi executado num console Xbox
+original, e a linha do PC é o registro anterior do projeto, não um teste desta fork.
 
 No port do Switch, os saves são pastas simples
 `switch/nfsu2x/game/UDATA/<titleid>/<prefix+slot>/<name>` ao lado de `saveimage.xbx`

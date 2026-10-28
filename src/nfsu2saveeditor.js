@@ -169,6 +169,129 @@ function verifyXbox(u8, key) {
 // with an all-zero key, which is what "Fill port key" writes.
 const KNOWN_PORT_KEY = '00000000000000000000000000000000';
 
+// ---------------------------------------------------------------------------
+// Interface language (English / Brazilian Portuguese). Persisted in
+// localStorage, defaults to the browser language. Nothing here touches the
+// bytes: the signing code and the field offsets are language independent.
+// ---------------------------------------------------------------------------
+const LANG_STORAGE = "nfsu2ui.lang";
+
+const STR = {
+    en: {
+        title: "NFS Underground 2 – Save Editor (100% client-side)",
+        sub: "Open a save file, tweak name, money and car performance, then download the modified file. No uploads; everything stays in your browser. The format (PC or Xbox port / xemu) is detected from the header, and for an Xbox save the editor also checks the signature against the Switch port's all-zero key.",
+        fileLabel: "Save file",
+        backupLabel: "Keep the original in memory (enables Download Backup .bak)",
+        backupHint: "Nothing is written to disk on load. The .bak file only appears when you click Download Backup, and it lands in your browser's downloads folder.",
+        sumName: "Profile Name", sumMoney: "Money", sumSlots: "Car Slots Used",
+        sumHeader: "Header Check", sumFormat: "Detected Format", sumSource: "Source",
+        sumSig: "Xbox Signature",
+        nameLabel: "New Profile Name (leave empty = no change)",
+        nameHintPc: "PC saves: up to 15 characters.",
+        nameHintXbox: "Xbox saves: up to 7 characters, uppercase.",
+        moneyLabel: "New Money (-1 = no change)",
+        xboxNote: "Xbox saves are signed with HMAC-SHA1 (an authentication code) that belongs to the profile — the console or the emulator — and not to the save itself. Paste that key below and the editor re-signs the file after every edit; without the key the old signature is kept and the game will most likely show \u201cUnable to load SAVE\u201d. The key is not stored in the save: for xemu it can be extracted from the emulator's RAM, see tools/xbox_key.py in the repository. On the Switch port the key is 16 zero bytes, because the port zeroes its EEPROM key; the editor applies that key by itself when the file's signature matches it.",
+        keyLabel: "Xbox signing key (32 hex characters = 16 bytes)",
+        keyPh: "32 hex characters, from your own console",
+        keyFillPort: "Port key (zeros)", keyClear: "Clear",
+        keyFillPortTitle: "Switch port key — all-zero, because the port's EEPROM key is stubbed to zero (verified on 5 port saves and in game on a Switch)",
+        keyHint: "Kept only in this browser (localStorage). A wrong key re-signs the save with the wrong key, so check the \u201cXbox Signature\u201d indicator before downloading. If this save is from the port and the signature does not match (for example a save that was already edited without re-signing), use \u201cPort key (zeros)\u201d.",
+        keyShow: "Show the key field",
+        keyAutoNote: "The Switch port key (16 zero bytes) was applied by itself: this file's signature matches it. Use the button above if you want to enter a different key.",
+        btnApply: "Apply Changes", btnDownload: "Download Modified Save",
+        btnBak: "Download Backup (.bak)", btnReset: "Reset (re-read file)",
+        pillOk: "OK", pillInvalid: "Invalid",
+        fmtPc: "PC", fmtXbox: "Xbox (Switch port / xemu)",
+        srcPc: "PC — no signature",
+        srcPort: "Switch port — signature matches the all-zero key",
+        srcXemu: "Signed with its own key (xemu / console) — enter that key",
+        sigNoKey: "no key", sigValid: "valid ✓",
+        sigResignUnverified: "re-signed (key unverified)",
+        sigWillResign: "modified — will re-sign", sigMismatch: "key mismatch",
+        fileNoFile: "No file selected.",
+        carLabel: "Car {n}", carInUse: "IN USE", carLocked: "locked/empty", carEmpty: "empty",
+        perfLabel: "Change performance", optNone: "No effect",
+        optNill: "Nill out (no parts, values cleared)",
+        optMax: "Max out (the game's maxed pattern: 40 parts, values 3.0)",
+        btnUnlock: "Unlock Slot",
+        stUnlocked: "Car slot {n} unlocked. Click \u201cApply Changes\u201d to write it to the file.",
+        stApplied: "Changes applied. The modified file ({name}) was downloaded.",
+        stNoKey: " No signing key: the signature is stale and the game will most likely refuse this save.",
+        stKeyOk: " Signature recalculated with your key.",
+        stKeyMismatch: " Signature recalculated, but the key did not match the loaded save — double-check it before using the file.",
+        stMoney: "Money must be 1..{max} (the game stores a signed 32-bit value, larger values become negative). Nothing was downloaded.",
+        stBakDone: "Backup ({name}.bak) downloaded to your browser's downloads folder.",
+        stReset: "To reset, select the file again.",
+        appliedBtn: "Applied ✓",
+        footOriginal: "<strong>Original editor:</strong> <a href=\"https://github.com/hackch/NFSU2-Savegame-Editor\">hackch / NFSU2-Savegame-Editor</a>, MIT License. This page is a <strong>fork</strong> by <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor\">Healt01</a>, which adds the Xbox save signature (three HMAC-SHA1 fields) so the game accepts edited saves, and the car performance fields.",
+        footCopyright: "Copyright (c) 2025 Christopher Hack (original editor). Modifications copyright (c) 2026 Healt. This copy of the software is provided under the <a href=\"LICENSE\">MIT License</a> — keep this notice with any copy you make, offline included.",
+        footScope: "Tested in game on a modded Switch running the port (real console hardware) and in xemu (emulator). <strong>Not tested on an original Xbox console.</strong>",
+        footMade: "How this work was made: code and documentation drafted with local AI models (llama.cpp), verified in game on the author's own hardware, console signing keys not published — <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor#how-this-work-was-made\">disclosure</a>. Docs: <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/README.md\">README (English)</a> · <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/README.pt-BR.md\">Português (Brasil)</a> · <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/FORMAT.md\">FORMAT.md (format, offsets, tests)</a>."
+    },
+    pt: {
+        title: "NFS Underground 2 – Editor de Save (100% no cliente)",
+        sub: "Abra um arquivo de save, ajuste nome, dinheiro e desempenho dos carros, e baixe o arquivo modificado. Nada é enviado; tudo fica no seu navegador. O formato (PC ou Xbox: port / xemu) é detectado pelo cabeçalho, e num save do Xbox o editor também compara a assinatura com a chave toda zero do port do Switch.",
+        fileLabel: "Arquivo de save",
+        backupLabel: "Manter o original em memória (libera o botão Baixar backup .bak)",
+        backupHint: "Nada é gravado no disco ao carregar. O arquivo .bak só aparece quando você clica em Baixar backup, e vai para a pasta de downloads do navegador.",
+        sumName: "Nome do perfil", sumMoney: "Dinheiro", sumSlots: "Vagas de carro usadas",
+        sumHeader: "Checagem do cabeçalho", sumFormat: "Formato detectado", sumSource: "Origem",
+        sumSig: "Assinatura do Xbox",
+        nameLabel: "Novo nome do perfil (vazio = não muda)",
+        nameHintPc: "Save PC: até 15 caracteres.",
+        nameHintXbox: "Save Xbox: até 7 caracteres, maiúsculas.",
+        moneyLabel: "Novo dinheiro (-1 = não muda)",
+        xboxNote: "Os saves do Xbox são assinados com HMAC-SHA1 (código de autenticação) que pertence ao perfil — console ou emulador — e não ao save em si. Cole essa chave abaixo e o editor re-assina o arquivo após cada edição; sem a chave, a assinatura antiga é mantida e o jogo provavelmente exibirá \u201cUnable to load SAVE\u201d. A chave não é armazenada no save: para o xemu ela pode ser extraída da RAM do emulador, veja em tools/xbox_key.py no repositório. No port do Switch a chave é 16 bytes zero, porque o port zera a chave do EEPROM; o editor aplica essa chave sozinho quando a assinatura do arquivo bate com ela.",
+        keyLabel: "Chave de assinatura do Xbox (32 caracteres hex = 16 bytes)",
+        keyPh: "32 caracteres hex, da sua chave",
+        keyFillPort: "Chave do port (zeros)", keyClear: "Limpar",
+        keyFillPortTitle: "Chave do port do Switch — toda zero, porque o port zera a chave do EEPROM (verificada em 5 saves do port e no jogo em um Switch)",
+        keyHint: "Guardada só neste navegador (localStorage). Uma chave errada re-assina o save com a chave errada, então confira o indicador \u201cAssinatura do Xbox\u201d antes de baixar. Se este save é do port e a assinatura não bate (por exemplo um save já editado sem re-assinar), use \u201cChave do port (zeros)\u201d.",
+        keyShow: "Mostrar o campo de chave",
+        keyAutoNote: "A chave do port do Switch (16 bytes zero) foi aplicada sozinha: a assinatura deste arquivo bate com ela. Use o botão acima se você quiser informar outra chave.",
+        btnApply: "Aplicar mudanças", btnDownload: "Baixar save modificado",
+        btnBak: "Baixar backup (.bak)", btnReset: "Recomeçar (relê o arquivo)",
+        pillOk: "OK", pillInvalid: "Inválido",
+        fmtPc: "PC", fmtXbox: "Xbox (port do Switch / xemu)",
+        srcPc: "PC — sem assinatura",
+        srcPort: "Port do Switch — assinatura bate com a chave zero",
+        srcXemu: "Assinado com chave própria (xemu / console) — informe essa chave",
+        sigNoKey: "sem chave", sigValid: "válida ✓",
+        sigResignUnverified: "re-assinado (chave não conferida)",
+        sigWillResign: "modificado — vai re-assinar", sigMismatch: "chave não confere",
+        fileNoFile: "Nenhum arquivo selecionado.",
+        carLabel: "Carro {n}", carInUse: "EM USO", carLocked: "trancada/vazia", carEmpty: "vazia",
+        perfLabel: "Mudar desempenho", optNone: "Sem efeito",
+        optNill: "Zerar (sem peças, valores limpos)",
+        optMax: "Max (padrão do jogo no máximo: 40 peças, valores 3.0)",
+        btnUnlock: "Destravar vaga",
+        stUnlocked: "Vaga de carro {n} destravada. Clique em \u201cAplicar mudanças\u201d para escrever no arquivo.",
+        stApplied: "Mudanças aplicadas. O arquivo modificado ({name}) foi baixado.",
+        stNoKey: " Sem chave de assinatura: a assinatura fica vencida e o jogo provavelmente recusa este save.",
+        stKeyOk: " Assinatura recalculada com a sua chave.",
+        stKeyMismatch: " Assinatura recalculada, mas a chave não confere com o save carregado — confira antes de usar o arquivo.",
+        stMoney: "O dinheiro precisa ficar entre 1 e {max} (o jogo guarda um inteiro de 32 bits com sinal; valores maiores viram negativos). Nada foi baixado.",
+        stBakDone: "Backup ({name}.bak) baixado na pasta de downloads do seu navegador.",
+        stReset: "Para recomeçar, selecione o arquivo de novo.",
+        appliedBtn: "Aplicado ✓",
+        footOriginal: "<strong>Editor original:</strong> <a href=\"https://github.com/hackch/NFSU2-Savegame-Editor\">hackch / NFSU2-Savegame-Editor</a>, licença MIT. Esta página é um <strong>fork</strong> de <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor\">Healt01</a>, que acrescenta a assinatura do save do Xbox (três campos HMAC-SHA1) para o jogo aceitar o save editado, e os campos de desempenho de carro.",
+        footCopyright: "Copyright (c) 2025 Christopher Hack (editor original). Modificações copyright (c) 2026 Healt. Esta cópia do software é fornecida sob a <a href=\"LICENSE\">licença MIT</a> — mantenha este aviso em qualquer cópia que você fizer, offline incluída.",
+        footScope: "Testado no jogo em um Switch modificado rodando o port (hardware real de console) e no xemu (emulador). <strong>Não testei em console Xbox original.</strong>",
+        footMade: "Como este trabalho foi feito: código e documentação rascunhados com modelos de IA locais (llama.cpp), verificados no jogo no hardware do autor, chaves de assinatura de console não publicadas — <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor#how-this-work-was-made\">aviso</a>. Docs: <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/README.md\">README (inglês)</a> · <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/README.pt-BR.md\">Português (Brasil)</a> · <a href=\"https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/FORMAT.md\">FORMAT.md (formato, offsets, testes)</a>."
+    }
+};
+
+let lang = (() => {
+    try { const s = localStorage.getItem(LANG_STORAGE); if (s === "en" || s === "pt") return s; } catch (e) { }
+    return (navigator.language || "en").toLowerCase().startsWith("pt") ? "pt" : "en";
+})();
+
+function t(key, vars) {
+    let s = (STR[lang] && STR[lang][key]) || STR.en[key] || key;
+    if (vars) { for (const k in vars) s = s.split("{" + k + "}").join(vars[k]); }
+    return s;
+}
+
 function readStoredKey() {
     try { return localStorage.getItem(KEY_STORAGE) || ''; } catch (e) { return ''; }
 }
@@ -187,23 +310,23 @@ function updateSigStatus() {
     if (!originalBuf || !workBuf || !fmt || fmt !== FORMATS.xbox) return;
     const key = parseKeyHex(xboxKeyInput.value);
     if (!key) {
-        sigStatus.textContent = 'no key';
+        sigStatus.textContent = t('sigNoKey');
         sigStatus.className = 'pill warn';
         return;
     }
     if (verifyXbox(workBuf, key).ok) {
         if (verifyXbox(originalBuf, key).ok) {
-            sigStatus.textContent = 'valid ✓';
+            sigStatus.textContent = t('sigValid');
             sigStatus.className = 'pill ok';
         } else {
-            sigStatus.textContent = 're-signed (unverified key)';
+            sigStatus.textContent = t('sigResignUnverified');
             sigStatus.className = 'pill warn';
         }
     } else if (verifyXbox(originalBuf, key).ok) {
-        sigStatus.textContent = 'modified — will re-sign';
+        sigStatus.textContent = t('sigWillResign');
         sigStatus.className = 'pill warn';
     } else {
-        sigStatus.textContent = 'key mismatch';
+        sigStatus.textContent = t('sigMismatch');
         sigStatus.className = 'pill warn';
     }
 }
@@ -324,6 +447,18 @@ const keyFillPortBtn = $('#keyFillPort');
 const keyClearBtn = $('#keyClear');
 const sigCell = $('#sigCell');
 const sigStatus = $('#sigStatus');
+const sourceCell = $('#sourceCell');
+const sourceStatus = $('#sourceStatus');
+const keyHiddenRow = $('#keyHiddenRow');
+const keyShowBtn = $('#keyShow');
+const nameHint = $('#nameHint');
+const backupHint = $('#backupHint');
+const keyHint = $('#keyHint');
+const keyAutoNote = $('#keyAutoNote');
+const keyFillPortLabelBtn = $('#keyFillPort');
+const keyClearLabelBtn = $('#keyClear');
+const langEnBtn = $('#langEn');
+const langPtBtn = $('#langPt');
 
 carsDiv.addEventListener('change', (e) => {
     if (e.target.tagName === 'SELECT') perfChoice[e.target.id.slice(4)] = e.target.value;
@@ -331,7 +466,7 @@ carsDiv.addEventListener('change', (e) => {
 
 function resetUI() {
     summary.hidden = true; editor.hidden = true; applyBtn.disabled = true; dlBtn.disabled = true; dlBakBtn.disabled = true;
-    carsDiv.innerHTML = ''; setText('#fileInfo', 'No file selected.');
+    carsDiv.innerHTML = ''; setText('#fileInfo', t('fileNoFile'));
     setText('#formatDisplay', '—');
     fmt = null;
     nameField.value = '';
@@ -342,6 +477,8 @@ function resetUI() {
     const xboxNote = document.getElementById('xboxNote');
     if (xboxNote) { xboxNote.hidden = true; }
     if (xboxKeyRow) { xboxKeyRow.hidden = true; }
+    if (keyHiddenRow) { keyHiddenRow.hidden = true; }
+    if (sourceCell) { sourceCell.hidden = true; }
     if (sigCell) { sigCell.hidden = true; }
     if (sigStatus) { sigStatus.textContent = '—'; sigStatus.className = 'pill'; }
 }
@@ -385,7 +522,7 @@ fileInput.addEventListener('change', async (e) => {
 function render() {
     const key = detectFormat(workBuf);
     const headerOk = key !== null;
-    headerStatus.textContent = headerOk ? 'OK' : 'Invalid';
+    headerStatus.textContent = headerOk ? t('pillOk') : t('pillInvalid');
     headerStatus.className = 'pill ' + (headerOk ? 'ok' : 'warn');
     if (!headerOk) {
         setText('#profile', '—'); setText('#moneyDisplay', '—'); setText('#slots', '—');
@@ -394,13 +531,38 @@ function render() {
     }
 
     fmt = FORMATS[key];
-    formatDisplay.textContent = fmt.label;
+    formatDisplay.textContent = fmt === FORMATS.pc ? t('fmtPc') : t('fmtXbox');
     const isXbox = key === 'xbox';
     const xboxNote = document.getElementById('xboxNote');
-    if (xboxNote) { xboxNote.hidden = !isXbox; }
-    xboxKeyRow.hidden = !isXbox;
+    if (xboxNote) { xboxNote.hidden = !isXbox; xboxNote.textContent = isXbox ? t('xboxNote') : ''; }
+    nameHint.textContent = fmt === FORMATS.pc ? t('nameHintPc') : t('nameHintXbox');
+
+    // Xbox saves of the Switch port are signed with the all-zero key, so that
+    // signature can be recognised from the bytes alone: if the three HMAC fields
+    // verify with the zero key, the save came from the port. Saves written by
+    // xemu or a console use their own key and verify with the zero key never.
+    sourceCell.hidden = !isXbox;
+    keyHiddenRow.hidden = true;
+    if (isXbox) {
+        const zeroKey = parseKeyHex(KNOWN_PORT_KEY);
+        if (verifyXbox(originalBuf, zeroKey).ok) {
+            sourceStatus.textContent = t('srcPort');
+            sourceStatus.className = 'pill ok';
+            const current = parseKeyHex(xboxKeyInput.value);
+            if (!current || !verifyXbox(originalBuf, current).ok) {
+                xboxKeyInput.value = KNOWN_PORT_KEY;
+                storeKey(KNOWN_PORT_KEY);
+            }
+            xboxKeyRow.hidden = true;
+            keyHiddenRow.hidden = false;
+        } else {
+            sourceStatus.textContent = t('srcXemu');
+            sourceStatus.className = 'pill warn';
+            xboxKeyRow.hidden = false;
+        }
+        updateSigStatus();
+    }
     sigCell.hidden = !isXbox;
-    if (isXbox) { updateSigStatus(); }
     nameField.maxLength = fmt.nameMax;
     if (fmt.upper) { nameField.style.textTransform = 'uppercase'; }
 
@@ -412,23 +574,24 @@ function render() {
     setText('#slots', String(usedSlots));
     summary.hidden = false;
 
-    if (backupToggle.checked) { dlBakBtn.disabled = false; }
+    dlBakBtn.disabled = !(backupToggle.checked && originalBuf);
 
     carsDiv.innerHTML = '';
     for (let i = 0; i < NUM_SLOTS; i++) {
         const locked = isSlotLocked(workBuf, i);
         const inUse = !locked;
+        const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-          <div><strong>Car ${i + 1}</strong> <span class="muted">${inUse ? 'IN USE' : locked ? 'locked/empty' : 'empty'}</span></div>
-          <label class="muted" for="car_${i}">Change performance</label>
+          <div><strong>${esc(t('carLabel', { n: i + 1 }))}</strong> <span class="muted">${esc(inUse ? t('carInUse') : locked ? t('carLocked') : t('carEmpty'))}</span></div>
+          <label class="muted" for="car_${i}">${esc(t('perfLabel'))}</label>
           <select id="car_${i}" ${inUse ? '' : 'disabled'}>
-            <option value="2">No effect</option>
-            <option value="0">Nill out (no parts, values cleared)</option>
-            <option value="1">Max out (the game's maxed pattern: 40 parts, values 3.0)</option>
+            <option value="2">${esc(t('optNone'))}</option>
+            <option value="0">${esc(t('optNill'))}</option>
+            <option value="1">${esc(t('optMax'))}</option>
           </select>
-          ${(!inUse && locked) ? `<button id="unlock_${i}" style="margin-top:8px">Unlock Slot</button>` : ''}
+          ${(!inUse && locked) ? `<button id="unlock_${i}" style="margin-top:8px">${esc(t('btnUnlock'))}</button>` : ''}
         `;
         carsDiv.appendChild(card);
 
@@ -440,7 +603,7 @@ function render() {
                     btn.onclick = () => {
                         unlockCarSlot(workBuf, i);
                         render();
-                        setStatus(`Car slot ${i + 1} unlocked. Click "Apply Changes" to write it to the file.`);
+                        setStatus(t('stUnlocked', { n: i + 1 }));
                     };
                 }
             }, 0);
@@ -469,7 +632,7 @@ function applyChanges() {
     const val = parseInt(moneyField.value.trim(), 10);
     if (!Number.isNaN(val) && val !== -1) {
         if (val < 1 || val > MONEY_MAX) {
-            setStatus(`Money must be 1..${MONEY_MAX} (the game stores a signed 32-bit value, larger values become negative). Nothing was downloaded.`);
+            setStatus(t('stMoney', { max: MONEY_MAX }));
             return;
         }
         dv.setInt32(fmt.money, val, true);
@@ -505,19 +668,19 @@ function applyChanges() {
     a.click();
     URL.revokeObjectURL(url);
 
-    let msg = `Changes applied. The modified file (${fileHandle.name}) was downloaded.`;
+    let msg = t('stApplied', { name: fileHandle.name });
     if (isXbox) {
         if (!signed) {
-            msg += ' No signing key: the signature is stale and the game will most likely refuse this save.';
+            msg += t('stNoKey');
         } else if (keyValidated) {
-            msg += ' Signature recalculated with your key.';
+            msg += t('stKeyOk');
         } else {
-            msg += ' Signature recalculated, but the key did not match the loaded save — double-check it before using the file.';
+            msg += t('stKeyMismatch');
         }
     }
     setStatus(msg);
-    applyBtn.textContent = 'Applied ✓';
-    setTimeout(() => applyBtn.textContent = 'Apply Changes', 1000);
+    applyBtn.textContent = t('appliedBtn');
+    setTimeout(() => applyBtn.textContent = t('btnApply'), 1000);
 }
 
 applyBtn.addEventListener('click', applyChanges);
@@ -532,12 +695,48 @@ dlBakBtn.addEventListener('click', () => {
     a.download = fileHandle.name + '.bak';
     a.click();
     URL.revokeObjectURL(url);
+    setStatus(t('stBakDone', { name: fileHandle.name }));
 });
+
+backupToggle.addEventListener('change', () => {
+    dlBakBtn.disabled = !(backupToggle.checked && originalBuf);
+});
+
+keyShowBtn.addEventListener('click', () => {
+    keyHiddenRow.hidden = true;
+    xboxKeyRow.hidden = false;
+    xboxKeyInput.focus();
+});
+
+// The .bak is not a file created on load: it is the original bytes kept in
+// memory, offered as a download. Say where it lands, in the status line.
+function applyLanguage() {
+    document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n-html')); });
+    xboxKeyInput.placeholder = t('keyPh');
+    keyFillPortLabelBtn.textContent = t('keyFillPort');
+    keyFillPortLabelBtn.title = t('keyFillPortTitle');
+    keyClearLabelBtn.textContent = t('keyClear');
+    keyHint.textContent = t('keyHint');
+    keyAutoNote.textContent = t('keyAutoNote');
+    keyShowBtn.textContent = t('keyShow');
+    backupHint.textContent = t('backupHint');
+    fileInfo.textContent = fileHandle ? `${fileHandle.name} — ${fileHandle.size.toLocaleString()} bytes` : t('fileNoFile');
+    langEnBtn.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
+    langPtBtn.setAttribute('aria-pressed', lang === 'pt' ? 'true' : 'false');
+    try { localStorage.setItem(LANG_STORAGE, lang); } catch (e) { /* storage disabled */ }
+    if (workBuf && fmt) { render(); }
+}
+
+langEnBtn.addEventListener('click', () => { lang = 'en'; applyLanguage(); });
+langPtBtn.addEventListener('click', () => { lang = 'pt'; applyLanguage(); });
+applyLanguage();
 
 reloadBtn.addEventListener('click', () => {
     if (fileHandle) {
         resetUI();
         fileInput.value = '';
-        alert('To reset, select the file again.');
+        alert(t('stReset'));
     }
 });

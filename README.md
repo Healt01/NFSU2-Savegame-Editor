@@ -20,7 +20,18 @@ car performance fields.
 ## Use it
 
 Open [`index.html`](index.html) in a browser (GitHub Pages runs it on the branch
-`main`), pick the save file, edit, **Apply**, download.
+`main`), pick the save file, edit, **Apply**, download. There is a language switch at
+the top of the page, **English / Português (Brasil)**, remembered in your browser.
+
+The editor also tells you which Xbox it is looking at. It verifies the signature
+against the Switch port's all-zero key: when the three HMAC fields match, that key is
+applied by itself and the key field is hidden — a port save needs no key from you. When
+they do not match, the save was signed with a key of its own (xemu or a console) and the
+page asks for that key.
+
+Nothing is written to disk when you load a file. The page keeps the original bytes in
+memory, and **Download Backup (.bak)** writes them, with the name `<yourfile>.bak`, into
+your browser's downloads folder.
 
 | Field | PC | Xbox / Switch port |
 |-------|----|--------------------|
@@ -57,7 +68,8 @@ there is nothing universal to publish. Get yours with `tools/xbox_key.py`, which
 finds it in a guest-RAM dump and verifies it against a save, and paste it in the key
 field of the editor. The Switch port is the exception: its kernel stubs the EEPROM
 key to zero (`xboxrecomp/src/kernel/kernel_xbox.c`), so its saves are signed with an
-all-zero key, which the **Fill port key** button writes for you.
+all-zero key, which the **Port key (zeros)** button writes for you. The editor applies
+that key by itself when the loaded save verifies with it, and then hides the key field.
 
 ## Car performance
 
@@ -93,6 +105,11 @@ Details, offsets, the port's SD card layout and the in-game tests are in
 | PC | Edited saves load, because PC saves carry no signature. **Not re-tested in this fork's work** — that row is the project's earlier record, kept for completeness. |
 | xemu | Unsigned edited save → `Unable to load`; re-signed → loads, new cash shown. |
 | Switch port | Unsigned → `Unable to load`; re-signed with the all-zero key → loads. Money `100000` and `2147483647` shown correctly; maxed pattern gives a maxed car. |
+
+**Scope of these tests.** The Switch port results come from a modded Switch running the
+port — real console hardware, with the card written through Hekate's USB Mass Storage.
+The xemu results come from the emulator. Nothing was run on an original Xbox console, and
+the PC row is the project's earlier record, not a test of this fork.
 
 On the Switch port, saves are plain folders
 `switch/nfsu2x/game/UDATA/<titleid>/<prefix+slot>/<name>` next to `saveimage.xbx`
