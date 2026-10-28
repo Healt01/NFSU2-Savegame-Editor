@@ -33,6 +33,10 @@ Nothing is written to disk when you load a file. The page keeps the original byt
 memory, and **Download Backup (.bak)** writes them, with the name `<yourfile>.bak`, into
 your browser's downloads folder.
 
+The page loads its script with a version tag (`?v=...`), so an update of the editor
+reaches you without you clearing the browser cache. The Pages server caches each file for
+10 minutes; after an update, a normal reload is enough.
+
 | Field | PC | Xbox / Switch port |
 |-------|----|--------------------|
 | Money | signed `int32` at `0xA16A` | signed `int32` at `0xA19A` |

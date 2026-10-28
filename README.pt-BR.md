@@ -31,6 +31,10 @@ Nada é gravado no disco ao carregar o arquivo. A página guarda os bytes origin
 memória, e o botão **Baixar backup (.bak)** os escreve como `<seuarquivo>.bak` na pasta de
 downloads do navegador.
 
+A página carrega o script com uma etiqueta de versão (`?v=...`), então uma atualização do
+editor chega até você sem precisar limpar o cache do navegador. O servidor do Pages guarda
+cada arquivo por 10 minutos; depois de uma atualização, basta recarregar a página.
+
 | Campo | PC | Xbox / port do Switch |
 |-------|----|------------------------|
 | Dinheiro | `int32` com sinal em `0xA16A` | `int32` com sinal em `0xA19A` |
