@@ -4,7 +4,7 @@
 ![roda 100% offline](https://img.shields.io/badge/roda-100%25%20offline-blue)
 ![PC · Xbox · port do Switch](https://img.shields.io/badge/PC%20%C2%B7%20Xbox%20%C2%B7%20port%20do%20Switch-informational)
 [![licença: MIT](https://img.shields.io/github/license/Healt01/NFSU2-Savegame-Editor?label=licen%C3%A7a)](LICENSE)
-[![assistido por IA, testado no jogo](https://img.shields.io/badge/assistido%20por%20IA-testado%20no%20jogo-yellow)](#como-este-trabalho-foi-feito)
+[![assistido por IA, testado no jogo](https://img.shields.io/badge/assistido%20por%20IA-testado%20no%20jogo-yellow)](https://github.com/Healt01/NFSU2-Savegame-Editor#how-this-work-was-made)
 
 [English](README.md) · **Português (Brasil)**
 
