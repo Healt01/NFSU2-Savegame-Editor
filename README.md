@@ -78,7 +78,7 @@ Details, offsets, the port's SD card layout and the in-game tests are in
 
 | Platform | Result |
 |----------|--------|
-| PC | Money and name edits accepted (PC saves are not signed). |
+| PC | Edited saves load, because PC saves carry no signature. **Not re-tested in this fork's work** — that row is the project's earlier record, kept for completeness. |
 | xemu | Unsigned edited save → `Unable to load`; re-signed → loads, new cash shown. |
 | Switch port | Unsigned → `Unable to load`; re-signed with the all-zero key → loads. Money `100000` and `2147483647` shown correctly; maxed pattern gives a maxed car. |
 
@@ -86,6 +86,24 @@ On the Switch port, saves are plain folders
 `switch/nfsu2x/game/UDATA/<titleid>/<prefix+slot>/<name>` next to `saveimage.xbx`
 and `SaveMeta.xbx`, so an edited, re-signed save is copied with ordinary file tools.
 Keep the two `.xbx` files together with the save.
+
+## How this work was made
+
+Reverse engineering and testing were done by me on my own hardware: my xemu install,
+my modded Switch, my saves, read in game. Models running locally on this machine
+(llama.cpp) helped draft code and documentation; nothing was uploaded to any service,
+and the signing key of a console is deliberately not published.
+
+What is claimed here is backed by a test, not by a model: the signature scheme was
+reproduced byte-for-byte against saves written by the game, the maxed car pattern came
+from a slot the game itself produced, and the editor's browser output was compared
+byte-for-byte with the Python tools (`sha1
+9bb79a96c3ccd249bf897dda271cbb8892a28c1b`), which was then loaded in game on the
+Switch port. The results, the offsets and the in-game tables are in
+[`FORMAT.md`](FORMAT.md).
+
+Anything not tested is marked as not tested. Not affiliated with Electronic Arts or
+Criterion; this is for personal modding of your own saves.
 
 ## License
 
