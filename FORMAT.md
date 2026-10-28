@@ -251,18 +251,21 @@ that blob as the HMAC key cannot reproduce anything.
 
 ### The key
 
-For the xemu profile used by the samples here:
-
-```
-K = COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS
-```
-
-It is **not** in `default.xbe` and **not** stored raw in `eeprom.bin`. xemu
+The key is **not** in `default.xbe` and **not** stored raw in `eeprom.bin`. xemu
 builds a 17-entry table of 16-byte keys in guest RAM at physical address
 `0x3b018` at boot; the default key is entry 16 (`0x3b118`). A different xemu
-install (different `eeprom.bin`) can derive a different key, and a real console
-uses its own EEPROM/HDD key, so extract the key from the machine that wrote the
-save. `tools/xbox_key.py` finds and verifies it from a RAM dump.
+install (different `eeprom.bin`) derives a different key, and a real console uses
+its own EEPROM/HDD key, so there is no key to publish here: extract it from the
+machine that wrote the save. `tools/xbox_key.py` finds it in a guest-RAM dump and
+verifies it against a save, and `tools/xbox_sign.py` signs with the key you pass
+with `-k`.
+
+```
+python3 tools/xbox_key.py --save XEMU2 --ram ram.bin --offset 0x3b000 --length 0x200
+```
+
+The key only matters for saves written by that machine. The 20-byte blob at `0x10`
+is `HMAC(K, sizes)`, not the key, so it cannot be used to sign.
 
 The Switch port (`nfsu2-sw`, static recomp of the Xbox game) signs with an
 **all-zero key**:

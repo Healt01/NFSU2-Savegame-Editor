@@ -12,7 +12,7 @@ and 8x slower.
 
 Examples:
     # verify a key against a save
-    xbox_key.py --save XEMU2 --key COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS
+    xbox_key.py --save XEMU2 --key <your-32-hex-key>
 
     # scan a raw 64 MB guest-RAM dump
     xbox_key.py --save XEMU2 --ram ram.bin --offset 0x3b000 --length 0x200

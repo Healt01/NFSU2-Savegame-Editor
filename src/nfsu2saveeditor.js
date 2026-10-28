@@ -156,12 +156,12 @@ function verifyXbox(u8, key) {
     return { okBlob, okA, okB, ok: okBlob && okA && okB };
 }
 
-// Key read from this machine's xemu (it comes from the emulator's EEPROM, so a
-// different install can derive a different one).
-const KNOWN_XEMU_KEY = 'COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS';
-
-// Switch port (nfsu2-sw) key: the port stubs its EEPROM key to zero, so its
-// saves are signed with an all-zero key. Verified on all 5 port samples.
+// The key is not in the game binary and not raw in eeprom.bin: xemu derives it
+// from the EEPROM at boot, so each install (and each real console) uses its own.
+// Extract it from the machine that wrote the save: `python3 tools/xbox_key.py
+// --save <save-file>` finds it in a RAM dump and verifies it. The Switch port is
+// the exception: its kernel stubs the EEPROM key to zero, so its saves are signed
+// with an all-zero key, which is what "Fill port key" writes.
 const KNOWN_PORT_KEY = '00000000000000000000000000000000';
 
 function readStoredKey() {
@@ -315,7 +315,6 @@ const backupToggle = $('#backupToggle');
 const reloadBtn = $('#reload');
 const xboxKeyRow = $('#xboxKeyRow');
 const xboxKeyInput = $('#xboxKey');
-const keyFillBtn = $('#keyFill');
 const keyFillPortBtn = $('#keyFillPort');
 const keyClearBtn = $('#keyClear');
 const sigCell = $('#sigCell');
@@ -347,11 +346,6 @@ resetUI();
 xboxKeyInput.value = readStoredKey();
 xboxKeyInput.addEventListener('input', () => {
     storeKey(xboxKeyInput.value);
-    updateSigStatus();
-});
-keyFillBtn.addEventListener('click', () => {
-    xboxKeyInput.value = KNOWN_XEMU_KEY;
-    storeKey(KNOWN_XEMU_KEY);
     updateSigStatus();
 });
 keyFillPortBtn.addEventListener('click', () => {

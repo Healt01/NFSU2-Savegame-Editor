@@ -3,8 +3,9 @@
 #
 #   perf_probe.sh <slot-dir> <n>
 #
-# <slot-dir> is the mounted slot folder (e.g.
-#   /run/media/Healt/SWITCH\ SD/switch/nfsu2x/game/UDATA/4541005a/004110E4103B)
+# <slot-dir> is the mounted slot folder, the folder that holds the save together
+# with saveimage.xbx and SaveMeta.xbx, e.g.
+#   <mount-point>/switch/nfsu2x/game/UDATA/4541005a/004110E4103B
 # <n> is the snapshot number. Copies the save into snapshots/snap<N> and diffs it
 # against snapshots/snap<N-1> with tools/perf_diff.py.
 set -euo pipefail

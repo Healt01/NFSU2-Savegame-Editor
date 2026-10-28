@@ -11,9 +11,12 @@ The game writes them in that order; sigB covers the other two, so it must be
 computed last.
 
 Examples:
-    xbox_sign.py verify XEMU2 -k COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS
-    xbox_sign.py sign   XEMU2 -k COLOQUE-AQUI-SEU-HEX-DE-32-DIGITOS -o XEMU2.signed
+    xbox_sign.py verify XEMU2 -k <your-32-hex-key>
+    xbox_sign.py sign   XEMU2 -k <your-32-hex-key> -o XEMU2.signed
     xbox_sign.py sign   XEMU2 -k @key.txt -o XEMU2.signed
+
+The Switch port signs with an all-zero key: `-k 00000000000000000000000000000000`.
+For xemu the key is per-install; `tools/xbox_key.py` extracts it from a RAM dump.
 """
 
 import argparse
