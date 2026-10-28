@@ -27,16 +27,15 @@ branch `main`), escolha o arquivo de save, edite, **Apply**, baixe.
 | Nome do perfil | 16 bytes em `0xD225` | 8 bytes em `0xD219`, maiúsculas, 7 caracteres |
 | Slots de carro | vetor em `0x5AEC`, 5 slots de `0x7F2` | vetor em `0x5B1C`, mesmo tamanho |
 
-Limites que o jogo impõe: o dinheiro precisa ficar em `1..2147483647` (acima disso
-vira negativo), 5 slots de save sem como comprar ou vender vaga no jogo, e nome de
-perfil do Xbox com no máximo 7 caracteres maiúsculos. O valor `2147483647` aparece
+Limites que o jogo impõe: o dinheiro precisa ficar entre `1` até `2,147,483,647` (acima disso
+vira negativo), nome de perfil do Xbox com no máximo 7 caracteres maiúsculos. O valor `2,147,483,647` aparece
 corretamente e fica negativo depois de uma corrida, porque o prêmio soma no mesmo
 `int32`.
 
 ## O save do Xbox é assinado
 
 O jogo recusa um save cuja assinatura não bate, então o save editado precisa ser
-re-assinado. A assinatura são três campos HMAC-SHA1, e o editor recalcula os três
+reassinado. A assinatura são três campos HMAC-SHA1, e o editor recalcula os três
 quando você aplica as mudanças, na ordem que o jogo usa:
 
 | Campo | Cobre |
@@ -86,19 +85,19 @@ Detalhes, offsets, o layout do port no cartão SD e os testes no jogo estão em
 
 | Plataforma | Resultado |
 |------------|-----------|
-| PC | Save editado abre, porque o save do PC não tem assinatura. **Não re-testado no trabalho desta fork** — essa linha é o registro anterior do projeto, mantido por completude. |
-| xemu | Save editado sem re-assinar → `Unable to load`; re-assinado → abre, e o banco novo aparece. |
-| Port do Switch | Sem re-assinar → `Unable to load`; re-assinado com a chave zero → abre. Dinheiro `100000` e `2147483647` aparecem certo; o padrão maxed deixa o carro no máximo. |
+| PC | Save editado abre, porque o save do PC não tem assinatura. **Não retestado no trabalho desta fork** — essa linha é o registro anterior do projeto, mantido por completude. |
+| xemu | Save editado sem reassinar → `Unable to load`; reassinado → abre, e o banco novo aparece. |
+| Port do Switch | Sem reassinar → `Unable to load`; reassinado com a chave zero → abre. Dinheiro `100000` e `2147483647` aparecem certo; o padrão maxed deixa o carro no máximo. |
 
 No port do Switch, os saves são pastas simples
 `switch/nfsu2x/game/UDATA/<titleid>/<prefix+slot>/<name>` ao lado de `saveimage.xbx`
-e `SaveMeta.xbx`, então um save editado e re-assinado é copiado com ferramentas comuns
+e `SaveMeta.xbx`, então um save editado e reassinado é copiado com ferramentas comuns
 de arquivo. Mantenha os dois arquivos `.xbx` junto do save.
 
 ## Como este trabalho foi feito
 
 O código e a documentação desta fork foram rascunhados com modelos de IA rodando
-localmente (llama.cpp, nesta máquina, sem serviço de nuvem, nada enviado), e
+localmente (llama.cpp, na minha máquina, sem serviço de nuvem, nada enviado), e
 verificados por mim no jogo, no meu hardware: meu xemu, meu Switch modificado, meus
 saves. As decisões de engenharia reversa são minhas, e a chave de assinatura de um
 console é omitida da publicação de propósito.
