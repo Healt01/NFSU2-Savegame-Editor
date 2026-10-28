@@ -1,5 +1,13 @@
 # NFSU2-Savegame-Editor
 
+[![open the editor](https://img.shields.io/badge/open%20the%20editor-online-brightgreen)](https://healt01.github.io/NFSU2-Savegame-Editor/)
+![runs 100% offline](https://img.shields.io/badge/runs-100%25%20offline-blue)
+![PC · Xbox · Switch port](https://img.shields.io/badge/PC%20%C2%B7%20Xbox%20%C2%B7%20Switch%20port-informational)
+[![license: MIT](https://img.shields.io/github/license/Healt01/NFSU2-Savegame-Editor?label=license)](LICENSE)
+[![AI-assisted, tested in game](https://img.shields.io/badge/AI--assisted-tested%20in%20game-yellow)](#how-this-work-was-made)
+
+**English** · [Português (Brasil)](README.pt-BR.md)
+
 Savegame editor for **Need for Speed: Underground 2** on PC, original Xbox (xemu)
 and the Switch port [`nfsu2-sw`](https://github.com/antoxa2584x/nfsu2-sw). Runs
 entirely in the browser: the file is parsed and rebuilt in your machine, nothing is
@@ -89,10 +97,11 @@ Keep the two `.xbx` files together with the save.
 
 ## How this work was made
 
-Reverse engineering and testing were done by me on my own hardware: my xemu install,
-my modded Switch, my saves, read in game. Models running locally on this machine
-(llama.cpp) helped draft code and documentation; nothing was uploaded to any service,
-and the signing key of a console is deliberately not published.
+The code and documentation in this fork were drafted with local AI models
+(llama.cpp, on my machine, no cloud service, nothing uploaded), and verified by me in
+game, on my own hardware: my xemu install, my modded Switch, my saves. The reverse
+engineering decisions are mine, and the signing key of a console is deliberately not
+published.
 
 What is claimed here is backed by a test, not by a model: the signature scheme was
 reproduced byte-for-byte against saves written by the game, the maxed car pattern came
