@@ -5,6 +5,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NFSU2 Save Editor (Offline)</title>
+  <meta name="description" content="Offline save editor for Need for Speed: Underground 2 (PC, original Xbox/xemu, Switch port nfsu2-sw). Fork by Healt01 of hackch/NFSU2-Savegame-Editor (MIT): adds the Xbox save signature (HMAC-SHA1) so edited saves load, plus money, profile name and car performance. Runs entirely in your browser." />
+  <meta property="og:title" content="NFSU2 Save Editor (Offline) — fork by Healt01" />
+  <meta property="og:description" content="Fork by Healt01 of hackch/NFSU2-Savegame-Editor (MIT). Adds the Xbox save signature (HMAC-SHA1) so edited saves load, plus the car performance fields. Runs offline; original editor by Christopher Hack." />
   <style>
     :root {
       --bg: #0f1220;
@@ -40,6 +43,19 @@
     .sub {
       color: var(--muted);
       margin-bottom: 16px
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    .legal {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 20px;
+      border-top: 1px solid #262b40;
+      padding-top: 12px
     }
 
     .card {
@@ -233,6 +249,29 @@
         <button id="reload">Reset (re‑read file)</button>
       </div>
     </div>
+
+    <footer class="legal">
+      <div><strong>Original editor:</strong> <a
+        href="https://github.com/hackch/NFSU2-Savegame-Editor">hackch / NFSU2-Savegame-Editor</a>,
+        MIT License. This page is a <strong>fork</strong> by <a
+        href="https://github.com/Healt01/NFSU2-Savegame-Editor">Healt01</a>, which adds the
+        Xbox save signature (three HMAC-SHA1 fields) so the game accepts edited saves, and
+        the car performance fields.</div>
+      <div>Copyright (c) 2025 Christopher Hack (original editor). Modifications copyright (c)
+        2026 Healt. This copy of the software is provided under the <a
+        href="LICENSE">MIT License</a> — keep this notice with any copy you make, offline
+        included.</div>
+      <div>How this work was made: code and documentation drafted with local AI models
+        (llama.cpp), verified in game on the author's own hardware, console signing keys not
+        published — <a
+        href="https://github.com/Healt01/NFSU2-Savegame-Editor#how-this-work-was-made">disclosure</a>.
+        Docs: <a href="https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/README.md">README
+        (English)</a> · <a
+        href="https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/README.pt-BR.md">Português
+        (Brasil)</a> · <a
+        href="https://github.com/Healt01/NFSU2-Savegame-Editor/blob/main/FORMAT.md">FORMAT.md
+        (format, offsets, tests)</a>.</div>
+    </footer>
 
     <script src="src/nfsu2saveeditor.js"></script>
 </body>

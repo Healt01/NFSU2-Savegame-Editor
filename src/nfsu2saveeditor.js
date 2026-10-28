@@ -1,6 +1,11 @@
 // NFSU2 save editor — supports the PC save format and the Xbox format
 // (Xbox port running on Switch, and original Xbox saves from xemu).
 //
+// Original editor: hackch / NFSU2-Savegame-Editor, MIT License.
+// Copyright (c) 2025 Christopher Hack (original editor). Modifications copyright (c)
+// 2026 Healt. Fork: https://github.com/Healt01/NFSU2-Savegame-Editor
+// This file is distributed under the MIT License; keep this notice with any copy.
+//
 // Both formats start with the "20CM" magic. They differ only in the header
 // length, so the payload layouts are aligned; the field offsets below were
 // derived by aligning the payloads of matched PC/Xbox save pairs.
