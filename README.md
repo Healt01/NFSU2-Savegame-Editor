@@ -29,9 +29,13 @@ Open [`index.html`](index.html) in a browser (GitHub Pages runs it on the branch
 | Car slots | array at `0x5AEC`, 5 slots of `0x7F2` | array at `0x5B1C`, same size |
 
 Limits the game enforces: money must stay in `1..2147483647` (above that it becomes
-negative), 5 save slots with no way to buy or sell slots in game, Xbox profile names
-of at most 7 uppercase characters. `2147483647` is shown correctly and goes negative
-after a race, because the winnings are added to the same `int32`.
+negative) and Xbox profile names have at most 7 uppercase characters. `2147483647` is
+shown correctly and goes negative after a race, because the winnings are added to the
+same `int32`.
+
+The save has 5 garage slots — 5 cars, `0x7F2` bytes each — and the game unlocks them
+as you progress: you cannot buy a slot, and you cannot sell or delete a car in game.
+The editor edits the 5 slots that exist, it cannot add one.
 
 ## Xbox saves are signed
 

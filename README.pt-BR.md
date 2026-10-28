@@ -25,12 +25,16 @@ branch `main`), escolha o arquivo de save, edite, **Apply**, baixe.
 |-------|----|------------------------|
 | Dinheiro | `int32` com sinal em `0xA16A` | `int32` com sinal em `0xA19A` |
 | Nome do perfil | 16 bytes em `0xD225` | 8 bytes em `0xD219`, maiúsculas, 7 caracteres |
-| Slots de carro | vetor em `0x5AEC`, 5 slots de `0x7F2` | vetor em `0x5B1C`, mesmo tamanho |
+| Vagas de carro | vetor em `0x5AEC`, 5 vagas de `0x7F2` | vetor em `0x5B1C`, mesmo tamanho |
 
-Limites que o jogo impõe: o dinheiro precisa ficar entre `1` até `2,147,483,647` (acima disso
-vira negativo), nome de perfil do Xbox com no máximo 7 caracteres maiúsculos. O valor `2,147,483,647` aparece
-corretamente e fica negativo depois de uma corrida, porque o prêmio soma no mesmo
-`int32`.
+Limites que o jogo impõe: o dinheiro precisa ficar entre `1` e `2.147.483.647` (acima
+disso vira negativo) e o nome de perfil do Xbox tem no máximo 7 caracteres maiúsculos.
+O valor `2.147.483.647` aparece corretamente e fica negativo depois de uma corrida,
+porque o prêmio soma no mesmo `int32`.
+
+O save tem 5 vagas de garagem — 5 carros, `0x7F2` bytes cada — e o jogo abre as vagas
+conforme você progride: não dá para comprar vaga, e não dá para vender nem apagar carro
+no jogo. O editor mexe nas 5 vagas que existem, ele não cria vaga nova.
 
 ## O save do Xbox é assinado
 
